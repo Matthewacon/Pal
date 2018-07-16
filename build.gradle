@@ -1,0 +1,336 @@
+import groovy.io.FileType
+
+import org.gradle.internal.jvm.Jvm
+import org.gradle.internal.os.OperatingSystem
+
+import java.util.concurrent.PriorityBlockingQueue
+
+plugins {
+    id 'java'
+    id 'cpp'
+    id "com.dorongold.task-tree" version "1.3"
+//    id 'google-test'
+}
+
+//Detect OS
+final String OS, JAVA_HOME = System.getProperty("java.home"), JAVA_MAJOR = Jvm.current().javaVersion.majorVersion
+switch(OperatingSystem.current().getFamilyName()) {
+    case "linux": OS = "linux"; break
+    case "windows": OS = "win32"; break
+    case "os x": OS = "darwin"; break
+    case "unknown": OS = "unix"; break
+    case "solaris": OS = "sunos"; break
+    default: throw new UnsupportedOperationException(
+            "OS class: ${OperatingSystem.current().getFamilyName()} is not supported!"
+    )
+}
+
+switch(JAVA_MAJOR) {
+    case "8":
+    case "9":
+    case "10": break
+    default: throw new UnsupportedOperationException("This version of java, '${JAVA_MAJOR}', is unsupported.")
+}
+
+group 'com.github.matthewacon'
+version '0.0.1'
+
+sourceCompatibility = targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+sourceSets {
+    pal {
+        java.srcDirs = ['src/java/pal/src']
+        resources.srcDirs = ['src/java/pal/res']
+    }
+    pal_annotations {
+        java.srcDirs = ['src/java/pal_annotations/src']
+        resources.srcDirs = ['src/java/pal_annotations/res']
+    }
+    example {
+        java.srcDirs = ['src/java/example/src']
+        resources.srcDirs = ['src/java/example/res']
+    }
+}
+
+configurations {
+    palRuntime.extendsFrom(palCompile)
+    pal_annotationsCompile.extendsFrom(palCompile)
+//    pal_annotationsRuntime.extendsFrom(pal_annotationsCompile)
+    exampleCompile.extendsFrom(palCompile)
+    exampleRuntime.extendsFrom(exampleCompile)
+}
+
+dependencies {
+//    palCompile gradleApi()
+    palCompile 'net.bytebuddy:byte-buddy-agent:1.8.12'
+    palCompile 'net.bytebuddy:byte-buddy-dep:1.8.12'
+    palCompile 'org.ow2.asm:asm:6.1.1'
+    palCompile 'org.ow2.asm:asm-commons:6.1.1'
+    palCompile 'org.jetbrains:annotations:16.0.2'
+    palCompile files(Jvm.current().toolsJar)
+    pal_annotationsCompile sourceSets.pal.output
+    exampleCompile sourceSets.pal.output
+    exampleCompile sourceSets.pal_annotations.output
+//    exampleRuntime sourceSets.pal.output
+//    exampleCompile project(':pal')
+//    annotationProcessor 'MetaAnnotationProcessor'
+//    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+model {
+    tasks.compilePalSharedLibraryPalCpp {
+        it.dependsOn(generateJNIHeaders)
+    }
+    tasks.compilePalStaticLibraryPalCpp {
+        it.dependsOn(generateJNIHeaders)
+    }
+    repositories {
+        libs(PrebuiltLibraries) {
+            jdk {
+                headers.srcDirs "${JAVA_HOME}/../include", "${JAVA_HOME}/../include/${OS}"
+            }
+        }
+    }
+    //TODO windows, linux and osx (i386, x86_64, amd64)
+    platforms {
+        x86 { architecture "i386" }
+        x64 { architecture "amd64" }
+    }
+    toolChains {
+        clang(Clang) {
+            target("x86") {
+                [cppCompiler, linker].each{
+                    it.withArguments{ args ->
+                        args << '-arch i386'
+                    }
+                }
+            }
+            target("x64") {
+                [cppCompiler, linker].each{
+                    it.withArguments{ args ->
+                        args << '-arch amd64'
+                    }
+                }
+            }
+        }
+//        gcc(Gcc) {
+//            target("x86") {
+//                [cppCompiler, linker].each{
+//                    it.withArguments{ args ->
+//                        args << '-arch i386'
+//                    }
+//                }
+//            }
+//            target("x64") {
+//                [cppCompiler, linker].each{
+//                    it.withArguments{ args ->
+//                        args << '-arch amd64'
+//                    }
+//                }
+//            }
+//        }
+    }
+    components {
+        pal(NativeLibrarySpec) {
+            baseName = 'pal'
+            //TODO all targets
+//            targetPlatform "x86"
+//            targetPlatform "x64"
+            sources {
+                cpp {
+                    source {
+                        lib library: 'jdk', linkage: 'api'
+                        srcDir 'src/cpp/pal/src'
+                        include '*.cpp'
+                    }
+                    exportedHeaders.srcDirs = ['src/cpp/pal/include']
+                }
+            }
+        }
+    }
+    binaries {
+        withType(SharedLibraryBinarySpec) { binary ->
+            binary.tasks.withType(org.gradle.nativeplatform.tasks.LinkSharedLibrary) {
+                final RegularFileProperty staticBinary = it.linkedFile
+                final Object ref = it
+                [project.tasks.findByName("jar"), project.tasks.findByName("preJar")].each {
+                    it.into("") { from staticBinary }
+                    it.dependsOn(ref)
+                }
+            }
+        }
+    }
+}
+
+static String packageFromFile(String baseDir, String file) {
+    String clippedPath
+    if (file.contains(baseDir)) {
+        clippedPath = file.split(baseDir)[1]
+        clippedPath = clippedPath.split(".class")[0]
+    }
+    clippedPath = clippedPath.replaceAll("/", ".")
+    return clippedPath
+}
+
+//TODO Incremental support
+task(generateJNIHeaders) {
+    dependsOn(compilePalJava)
+    def classPath = sourceSets.pal.output.getClassesDir().getAbsolutePath()
+    sourceSets.pal.compileClasspath.files.forEach {
+        classPath += ":" + it.getAbsolutePath()
+    }
+    doLast {
+//        println "Generating JNI headers..."
+        ByteArrayOutputStream stdOut = new ByteArrayOutputStream()
+        File outputDir =
+                sourceSets.pal.output.files.find {!it.getAbsolutePath().toLowerCase().contains("resources")}
+        final Queue<File> fileQueue = new PriorityBlockingQueue<>()
+        outputDir.eachFileRecurse(FileType.FILES) {
+            if (!it.getName().contains('$')) fileQueue << it
+        }
+        final Vector<Thread> threads = new Vector<>()
+        1.upto(Runtime.getRuntime().availableProcessors()) {
+            final Thread t = new Thread({
+                while(fileQueue.peek() != null) {
+                    String packagePath = packageFromFile(outputDir.getAbsolutePath() + "/", fileQueue.poll().getAbsolutePath())
+                    println "Generating headers for: '${packagePath}'"
+                    project.exec {
+                        switch (JAVA_MAJOR) {
+                            case "8":
+                                commandLine(
+                                        'javah',
+                                        '-d',
+                                        "${project.projectDir}/src/cpp/pal/include",
+                                        '-classpath',
+                                        classPath,
+                                        packagePath
+                                )
+                                break
+                            case "9":
+                            case "10":
+                                commandLine(
+                                        'javac',
+                                        '-h',
+                                        '-d',
+                                        "${project.projectDir}/src/cpp/pal/include",
+                                        '-classpath',
+                                        classPath,
+                                        packagePath
+                                )
+                                break
+                        }
+                        standardOutput = stdOut
+                    }
+                }
+                Thread.currentThread().interrupt()
+            })
+            t.start()
+            threads.add(t)
+        }
+        boolean finished = false
+//        int iteration = 0
+        while (!finished) {
+//            iteration++
+            finished = true
+            for(thread in threads) {
+                if (thread.getState() != Thread.State.TERMINATED) {
+                    finished = false
+                    break
+                }
+            }
+//            println "Iteration: ${iteration} :: Finished: ${finished}"
+        }
+        threads.clear()
+        println new String(stdOut.toByteArray())
+    }
+}
+
+//Clean JNI headers
+task cleanJNIHeaders() {
+    tasks.findByName("clean").dependsOn(cleanJNIHeaders)
+    doLast {
+        project.files("${project.projectDir}/src/cpp/pal/include").asFileTree.files.forEach{
+            if (it.getName().endsWith(".h")) it.delete()
+        }
+    }
+}
+
+compilePalJava {
+//    options.compilerArgs += ['-Werror', '-Xlint:none', '-XDenableSunApiLintControl']
+    options.compilerArgs += ['-Werror', '-XDenableSunApiLintControl']
+}
+
+//TODO condition debug through task arguments
+void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
+    final Set<File> dependencies = configurations.palRuntime.files
+//    options.compilerArgs += '-proc:none'
+    //Append all of the required libraries to the annotation processor classpath
+    compileTask.options.annotationProcessorPath = jarTask.outputs.files + layout.files(dependencies)
+    //TODO Need to fetch output file from cppcompile task
+//    File file = jar.outputs.files.files.getAt(0)
+    //Append all of the required libraries to the java compiler classpath
+    String compileClasspath = ""
+    int numDependencies = dependencies.size()
+    for (int i = 0; i < numDependencies; i++) {
+        compileClasspath += dependencies.getAt(i).getAbsolutePath() + (i < (numDependencies-1) ? ":" : "")
+    }
+    compileClasspath += ":${jarTask.outputs.files.files.getAt(0).getAbsolutePath()}"
+    compileTask.options.forkOptions.jvmArgs += "-Xbootclasspath/a:${compileClasspath}"
+    //Open a local debug socket for the compiler (allows debugging of runtime agents and annotation processors)
+//    compileTask.options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000"
+    //Register java agent (instruments com.sun.tools.javac.main.JavaCompiler)
+    compileTask.options.forkOptions.jvmArgs += "-javaagent:${jarTask.outputs.files.files.getAt(0).getAbsolutePath()}"
+    //Register native agent with the compiler's jvm instance
+    //TODO remove hardcoded path
+    compileTask.options.forkOptions.jvmArgs += "-agentpath:/home/matthew/Git/pal/build/libs/pal/shared/libpal.so"
+    compileTask.options.fork = true
+    compileTask.options.incremental = false
+}
+
+static void configureManifest(final Manifest manifest) {
+    manifest.attributes(
+            'Premain-Class' : 'io.github.matthewacon.pal.PalAgent',
+            'Can-Redefine-Classes': 'true',
+            'Can-Retransform-Classes': 'true',
+            'Can-Set-Native-Method-Prefix': 'true'
+    )
+}
+
+task preJar(type: Jar, dependsOn: compilePalJava) {
+    description = 'Creates the stripped pal jar. Used for bootstrapping the pal annotations.'
+    appendix = 'bootstrap'
+    from sourceSets.pal.output
+    configureManifest(manifest)
+}
+
+compilePal_annotationsJava {
+    dependsOn(preJar)
+    setCompilerJVMArgs(compilePal_annotationsJava, preJar)
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000"
+}
+
+jar {
+    dependsOn(generateJNIHeaders, compilePalJava, compilePal_annotationsJava)
+    from sourceSets.pal.output
+    from sourceSets.pal_annotations.output
+    configureManifest(manifest)
+}
+
+compileExampleJava {
+    dependsOn(jar)
+    setCompilerJVMArgs(compileExampleJava, jar)
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8001"
+}
+
+task exampleJar(type: Jar, dependsOn: compileExampleJava) {
+    description 'Creates the test jar'
+    baseName = 'example'
+    from sourceSets.example.output
+    manifest.attributes(
+            'Main-Class' : 'Testing'
+    )
+}

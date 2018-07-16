@@ -1,0 +1,17 @@
+# IntelliJ IDEA
+*.idea/
+*.iml
+*.ipr
+*out/
+
+# CMake
+*cmake-build-debug/
+*build/
+
+# Gradle
+*.gradle/
+*gradlew
+
+# Java
+*.class
+*.jar
