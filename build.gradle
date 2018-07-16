@@ -81,9 +81,22 @@ dependencies {
 //    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
+def File sharedLibrary
+
 model {
+    tasks.linkPalSharedLibrary {
+        for (final file in it.outputs.files.files) {
+            if (file.isFile()) {
+                tasks.withType(JavaCompile) {
+                    it.ext.sharedLibrary = file
+                }
+                break
+            }
+        }
+    }
     tasks.compilePalSharedLibraryPalCpp {
         it.dependsOn(generateJNIHeaders)
+//        println it.outputs.files.files
     }
     tasks.compilePalStaticLibraryPalCpp {
         it.dependsOn(generateJNIHeaders)
@@ -149,6 +162,9 @@ model {
                     }
                     exportedHeaders.srcDirs = ['src/cpp/pal/include']
                 }
+            }
+            binaries.all {
+
             }
         }
     }
@@ -266,6 +282,11 @@ compilePalJava {
 
 //TODO condition debug through task arguments
 void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
+    //Define extra task variable to access the linker task file output
+    compileTask.ext {
+        sharedLibrary = null
+    }
+    compileTask.inputs
     final Set<File> dependencies = configurations.palRuntime.files
 //    options.compilerArgs += '-proc:none'
     //Append all of the required libraries to the annotation processor classpath
@@ -285,8 +306,9 @@ void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
     //Register java agent (instruments com.sun.tools.javac.main.JavaCompiler)
     compileTask.options.forkOptions.jvmArgs += "-javaagent:${jarTask.outputs.files.files.getAt(0).getAbsolutePath()}"
     //Register native agent with the compiler's jvm instance
-    //TODO remove hardcoded path
-    compileTask.options.forkOptions.jvmArgs += "-agentpath:/home/matthew/Git/pal/build/libs/pal/shared/libpal.so"
+    compileTask.doFirst {
+        compileTask.options.forkOptions.jvmArgs += "-agentpath:${compileTask.ext.sharedLibrary.getAbsolutePath()}"
+    }
     compileTask.options.fork = true
     compileTask.options.incremental = false
 }
