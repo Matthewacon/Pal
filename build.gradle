@@ -96,27 +96,6 @@ dependencies {
 }
 
 model {
-    tasks.linkPalSharedLibrary {
-        it.mustRunAfter(compilePalJava)
-        final Object ref = it
-        final File output = ref.outputs.files.files.getAt(1)
-        tasks.withType(JavaCompile) {
-            if (!it.equals(compilePalJava)) {
-                it.dependsOn(ref)
-                it.ext.sharedLibrary = output
-            }
-        }
-        tasks.withType(Jar) {
-            it.into("") { from output }
-            it.dependsOn(ref)
-        }
-    }
-    tasks.compilePalSharedLibraryPalCpp {
-        it.dependsOn(generateJNIHeaders)
-    }
-    tasks.compilePalStaticLibraryPalCpp {
-        it.dependsOn(generateJNIHeaders)
-    }
     repositories {
         libs(PrebuiltLibraries) {
             jdk {
@@ -176,12 +155,30 @@ model {
                         srcDir 'src/cpp/pal/src'
                         include '*.cpp'
                     }
-                    exportedHeaders.srcDirs = ['src/cpp/pal/include']
+                    exportedHeaders.srcDirs = ['src/cpp/pal/include', 'src/cpp/pal/autogen_include']
                 }
             }
 //            binaries.all {
 //
 //            }
+            tasks.withType(org.gradle.language.cpp.tasks.CppCompile) {
+                it.dependsOn(generateJNIHeaders)
+            }
+            tasks.withType(org.gradle.nativeplatform.tasks.LinkSharedLibrary) {
+                it.mustRunAfter(compilePalJava)
+                final Object ref = it
+                final File output = ref.outputs.files.files.getAt(1)
+                tasks.withType(JavaCompile) {
+                    if (!it.equals(compilePalJava)) {
+                        it.dependsOn(ref)
+                        it.ext.sharedLibrary = output
+                    }
+                }
+                tasks.withType(Jar) {
+                    it.into("") { from output }
+                    it.dependsOn(ref)
+                }
+            }
         }
     }
 //    binaries {
@@ -212,7 +209,7 @@ static String packageFromFile(String baseDir, String file) {
 
 //TODO Incremental support
 //TODO Make this into a plugin
-task(generateJNIHeaders) {
+task generateJNIHeaders() {
     dependsOn(compilePalJava)
     description = 'Generates the JNI headers for the pal module.'
     def classPath = sourceSets.pal.output.getClassesDir().getAbsolutePath()
@@ -220,7 +217,7 @@ task(generateJNIHeaders) {
         classPath += ":" + it.getAbsolutePath()
     }
     doLast {
-//        println "Generating JNI headers..."
+        println "Generating JNI headers..."
         ByteArrayOutputStream stdOut = new ByteArrayOutputStream()
         File outputDir =
                 sourceSets.pal.output.files.find {!it.getAbsolutePath().toLowerCase().contains("resources")}
@@ -233,14 +230,14 @@ task(generateJNIHeaders) {
             final Thread t = new Thread({
                 while(fileQueue.peek() != null) {
                     String packagePath = packageFromFile(outputDir.getAbsolutePath() + "/", fileQueue.poll().getAbsolutePath())
-                    println "Generating headers for: '${packagePath}'"
+                    stdOut.write("Generated headers for: '${packagePath}'\n".getBytes())
                     project.exec {
                         switch (JAVA_MAJOR) {
                             case "8":
                                 commandLine(
                                         'javah',
                                         '-d',
-                                        "${project.projectDir}/src/cpp/pal/include",
+                                        "${project.projectDir}/src/cpp/pal/autogen_include",
                                         '-classpath',
                                         classPath,
                                         packagePath
@@ -252,7 +249,7 @@ task(generateJNIHeaders) {
                                         'javac',
                                         '-h',
                                         '-d',
-                                        "${project.projectDir}/src/cpp/pal/include",
+                                        "${project.projectDir}/src/cpp/pal/autogen_include",
                                         '-classpath',
                                         classPath,
                                         packagePath
@@ -278,7 +275,7 @@ task(generateJNIHeaders) {
             }
         }
         threads.clear()
-        println new String(stdOut.toByteArray())
+        print new String(stdOut.toByteArray())
     }
 }
 
@@ -286,7 +283,7 @@ task(generateJNIHeaders) {
 task cleanJNIHeaders() {
     tasks.findByName("clean").dependsOn(cleanJNIHeaders)
     doLast {
-        project.files("${project.projectDir}/src/cpp/pal/include").asFileTree.files.forEach{
+        project.files("${project.projectDir}/src/cpp/pal/autogen_include").asFileTree.files.forEach{
             if (it.getName().endsWith(".h")) it.delete()
         }
     }
@@ -373,6 +370,7 @@ compilePal_annotation_processorsJava {
 //    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
+//Required to recompile Pal annotations and apply both source and compile
 task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
     description = 'Creates a full Pal jar with the original Pal annotation definitions. Used to recompile the ' +
             'annotations.'
@@ -390,6 +388,7 @@ task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
 compilePal_annotations_recompileJava {
     dependsOn(compilePal_annotation_processorsJava)
     setCompilerJVMArgs(compilePal_annotations_recompileJava, preCompileJar)
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 //The full Pal jar, including the main library, default annotations and annotation processors
@@ -415,7 +414,7 @@ jar {
 compileExampleJava {
     dependsOn(jar)
     setCompilerJVMArgs(compileExampleJava, jar)
-//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006"
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 task exampleJar(type: Jar, dependsOn: compileExampleJava) {

@@ -34,7 +34,6 @@ public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
 
  @Override
  public boolean process(final Set<? extends TypeElement> set, final RoundEnvironment re) {
-  System.out.println("PAL BOOTSTRAP ANNOTATION PROCESSOR INVOKED!");
   if (!re.processingOver()) {
    //The set is gaurenteed to only contain 1 element, since this implementation of AbstractProcessor only supports the
    //io.github.matthewacon.pal.bytecode.PalProcessor annotation.

@@ -4,11 +4,11 @@ import io.github.matthewacon.pal.Literal;
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
 import net.bytebuddy.dynamic.DynamicType;
 
-import java.util.AbstractMap.SimpleEntry;
+import java.util.AbstractMap;
 
-public final class ExampleProcessor implements PalBytecodeProcessor<Literal> {
+public class ExampleProcessor implements PalBytecodeProcessor<Literal> {
  @Override
- public SimpleEntry<Class<?>, DynamicType.Builder<?>> process(Class<?> clazz, Literal annotation) {
+ public AbstractMap.SimpleEntry<Class<?>, DynamicType.Builder<?>> process(Class<?> clazz, Literal annotation) {
   return null;
  }
 }
