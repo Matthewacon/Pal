@@ -1,3 +1,10 @@
 package io.github.matthewacon.pal.api;
 
-public interface IPalAnnotation<T extends java.lang.Enum<T> & IPalAnnotation<T>> {}
+import java.lang.annotation.Annotation;
+
+//public interface IPalAnnotation<T extends Annotation & IPalAnnotation<T>> {
+public interface IPalAnnotation<T extends Annotation> {
+// default IPalProcessor<T>[] getProcessors() {
+//  return new IPalProcessor[0];
+// }
+}

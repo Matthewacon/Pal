@@ -14,10 +14,19 @@ import com.sun.tools.javac.main.JavaCompiler;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public final class PalAgent {
- public static final class JavaCompilerInterceptor {
-  @Advice.OnMethodEnter
-  public static void intercept(@Advice.This JavaCompiler compiler) {
-   CompilerHooks.INSTANCE.onCompilerClose();
+ public static final class JavaCompilerInterceptors {
+  public static final class Construct {
+   @Advice.OnMethodEnter
+   public static void intercept(@Advice.This JavaCompiler compiler) {
+    CompilerHooks.INSTANCE.onCompilerConstructed();
+   }
+  }
+
+  public static final class Close {
+   @Advice.OnMethodEnter
+   public static void intercept(@Advice.This JavaCompiler compiler) {
+    CompilerHooks.INSTANCE.onCompilerClosed();
+   }
   }
  }
 
@@ -93,8 +102,17 @@ public final class PalAgent {
   //Transform JavaCompiler class
   base
    .type(named(JavaCompiler.class.getName()))
+   //Intercepting the close method
    .transform((builder, typeDescription, classLoader, module) ->
-     builder.visit(Advice.to(JavaCompilerInterceptor.class).on(named("close").and(takesArguments(boolean.class))))
+     builder.visit(
+      Advice.to(JavaCompilerInterceptors.Close.class).on(named("close").and(takesArguments(boolean.class)))
+     )
+   )
+   //Intercepting compiler instantiation
+   .transform((builder, typeDescription, classLoader, module) ->
+    builder.visit(
+     Advice.to(JavaCompilerInterceptors.Construct.class).on(isConstructor())
+    )
    )
    .installOn(instrumentation);
 
@@ -102,7 +120,9 @@ public final class PalAgent {
   base
    .type(named(ClassWriter.class.getName()))
    .transform((builder, typeDescription, classLoader, module) ->
-    builder.visit(Advice.to(ClassWriterInterceptors.WriteClassFile.class).on(named("writeClassFile")))
+    builder.visit(
+     Advice.to(ClassWriterInterceptors.WriteClassFile.class).on(named("writeClassFile"))
+    )
    )
    .installOn(instrumentation);
 
@@ -110,9 +130,12 @@ public final class PalAgent {
   base
    .type(named(ClassWriter.class.getName()))
    .transform((builder, typeDescription, classLoader, module) ->
-    builder.visit(Advice.to(ClassWriterInterceptors.WriteClass.class).on(named("writeClass")))
+    builder.visit(
+     Advice.to(ClassWriterInterceptors.WriteClass.class).on(named("writeClass"))
+    )
    )
    .installOn(instrumentation);
+
  }
 
  public static Instrumentation getInstrumentation() {

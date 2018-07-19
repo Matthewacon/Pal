@@ -60,7 +60,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
 
 JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *jvm) {}
 
-JNIEXPORT jobject JNICALL Java_NativeUtils_getInstanceFromStack(JNIEnv *env, jclass ignored, jint depth) {
+JNIEXPORT jobject JNICALL Java_io_github_matthewacon_pal_NativeUtils_getInstanceFromStack(JNIEnv *env, jclass ignored, jint depth) {
  JavaVM *vm;
  EXCEPTION_ON_JVM_ERROR(
   env->GetJavaVM(&vm),

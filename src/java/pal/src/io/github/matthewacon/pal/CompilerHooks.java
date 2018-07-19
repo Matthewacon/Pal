@@ -21,6 +21,8 @@ public final class CompilerHooks {
  private final JavaFileManager fileManager;
  private final Vector<Symbol.ClassSymbol> compilerOutput;
 
+ private int openCompilers = 0;
+
  public CompilerHooks(final DisposableClassLoader dcl, final JavaFileManager fileManager) {
   if (INSTANCE == null) {
    INSTANCE = this;
@@ -32,8 +34,13 @@ public final class CompilerHooks {
   this.compilerOutput = new Vector<>();
  }
 
+ public void onCompilerConstructed() {
+  openCompilers += 1;
+ }
+
  //Define class in order of descending hierarchy (required to define inner classes)
- public void onCompilerClose() {
+ public void onCompilerClosed() {
+  openCompilers -= 1;
   final LinkedList<Symbol.ClassSymbol> orderedHierarchy = new LinkedList<>();
   final LinkedHashMap<Symbol.ClassSymbol, byte[]> orderedDefinitions = new LinkedHashMap<>();
   int roundDepth = 0;
@@ -69,6 +76,9 @@ public final class CompilerHooks {
   //TODO remove debug statement
   for (final Class<?> clazz : definedClasses) {
    System.out.println("Defined: " + clazz);
+  }
+  if (openCompilers == 0) {
+
   }
  }
 

@@ -32,7 +32,7 @@ switch(JAVA_MAJOR) {
     default: throw new UnsupportedOperationException("This version of java, '${JAVA_MAJOR}', is unsupported.")
 }
 
-group 'com.github.matthewacon'
+group 'io.github.matthewacon'
 version '0.0.1'
 
 sourceCompatibility = targetCompatibility = 1.8
@@ -42,14 +42,27 @@ repositories {
 }
 
 sourceSets {
+    //Main library
     pal {
         java.srcDirs = ['src/java/pal/src']
         resources.srcDirs = ['src/java/pal/res']
     }
+    //Pal annotation sources
     pal_annotations {
         java.srcDirs = ['src/java/pal_annotations/src']
         resources.srcDirs = ['src/java/pal_annotations/res']
     }
+    //Pal annotation processor sources
+    pal_annotation_processors {
+        java.srcDirs = ['src/java/pal_annotation_processors/src']
+        resources.srcDirs = ['src/java/pal_annotation_processors/res']
+    }
+    //Pal annotation sources (recompile task)
+    pal_annotations_recompile {
+        java.srcDirs = ['src/java/pal_annotations/src']
+        resources.srcDirs = ['src/java/pal_annotations/res']
+    }
+    //Test sources
     example {
         java.srcDirs = ['src/java/example/src']
         resources.srcDirs = ['src/java/example/res']
@@ -59,8 +72,8 @@ sourceSets {
 configurations {
     palRuntime.extendsFrom(palCompile)
     pal_annotationsCompile.extendsFrom(palCompile)
-//    pal_annotationsRuntime.extendsFrom(pal_annotationsCompile)
-    exampleCompile.extendsFrom(palCompile)
+    pal_annotation_processorsCompile.extendsFrom(pal_annotationsCompile, palCompile)
+    exampleCompile.extendsFrom(pal_annotation_processorCompile)
     exampleRuntime.extendsFrom(exampleCompile)
 }
 
@@ -73,6 +86,7 @@ dependencies {
     palCompile 'org.jetbrains:annotations:16.0.2'
     palCompile files(Jvm.current().toolsJar)
     pal_annotationsCompile sourceSets.pal.output
+    pal_annotation_processorsCompile sourceSets.pal_annotations.output
     exampleCompile sourceSets.pal.output
     exampleCompile sourceSets.pal_annotations.output
 //    exampleRuntime sourceSets.pal.output
@@ -81,22 +95,33 @@ dependencies {
 //    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-def File sharedLibrary
-
 model {
     tasks.linkPalSharedLibrary {
-        for (final file in it.outputs.files.files) {
-            if (file.isFile()) {
-                tasks.withType(JavaCompile) {
-                    it.ext.sharedLibrary = file
-                }
-                break
+//        for (final file in it.outputs.files.files) {
+//            println file
+//            if (file.isFile()) {
+        final Object ref = it
+        final File output = ref.outputs.files.files.getAt(1)
+        tasks.withType(JavaCompile) {
+//            it.dependsOn(ref)
+            if (!it.equals(compilePalJava)) {
+                //TODO For some reason, this does not work...
+                it.dependsOn(ref)
+                it.ext.sharedLibrary = output
             }
+//            println "${it} :: ${it.getDependsOn()}"
         }
+        tasks.withType(Jar) {
+//            println "${it} :: ${output}"
+            it.into("") { from output }
+            it.dependsOn(ref)
+        }
+//                break
+//            }
+//        }
     }
     tasks.compilePalSharedLibraryPalCpp {
         it.dependsOn(generateJNIHeaders)
-//        println it.outputs.files.files
     }
     tasks.compilePalStaticLibraryPalCpp {
         it.dependsOn(generateJNIHeaders)
@@ -163,23 +188,25 @@ model {
                     exportedHeaders.srcDirs = ['src/cpp/pal/include']
                 }
             }
-            binaries.all {
-
-            }
+//            binaries.all {
+//
+//            }
         }
     }
-    binaries {
-        withType(SharedLibraryBinarySpec) { binary ->
-            binary.tasks.withType(org.gradle.nativeplatform.tasks.LinkSharedLibrary) {
-                final RegularFileProperty staticBinary = it.linkedFile
-                final Object ref = it
-                [project.tasks.findByName("jar"), project.tasks.findByName("preJar")].each {
-                    it.into("") { from staticBinary }
-                    it.dependsOn(ref)
-                }
-            }
-        }
-    }
+//    binaries {
+//        withType(SharedLibraryBinarySpec) { binary ->
+//            binary.tasks.withType(org.gradle.nativeplatform.tasks.LinkSharedLibrary) {
+//                final RegularFileProperty staticBinary = it.linkedFile
+//                final Object ref = it
+////                [project.tasks.findByName("jar"), project.tasks.findByName("libOnlyJar")].each {
+//                tasks.withType(Jar) {
+//                    println "${it} :: ${staticBinary}"
+//                    it.into("") { from staticBinary }
+//                    it.dependsOn(ref)
+//                }
+//            }
+//        }
+//    }
 }
 
 static String packageFromFile(String baseDir, String file) {
@@ -193,8 +220,10 @@ static String packageFromFile(String baseDir, String file) {
 }
 
 //TODO Incremental support
+//TODO Make this into a plugin
 task(generateJNIHeaders) {
     dependsOn(compilePalJava)
+    description = 'Generates the JNI headers for the pal module.'
     def classPath = sourceSets.pal.output.getClassesDir().getAbsolutePath()
     sourceSets.pal.compileClasspath.files.forEach {
         classPath += ":" + it.getAbsolutePath()
@@ -283,9 +312,9 @@ compilePalJava {
 //TODO condition debug through task arguments
 void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
     //Define extra task variable to access the linker task file output
-    compileTask.ext {
-        sharedLibrary = null
-    }
+//    compileTask.ext {
+//        sharedLibrary = null
+//    }
     compileTask.inputs
     final Set<File> dependencies = configurations.palRuntime.files
 //    options.compilerArgs += '-proc:none'
@@ -322,30 +351,83 @@ static void configureManifest(final Manifest manifest) {
     )
 }
 
-task preJar(type: Jar, dependsOn: compilePalJava) {
-    description = 'Creates the stripped pal jar. Used for bootstrapping the pal annotations.'
-    appendix = 'bootstrap'
+//Required to build Pal annotations
+task libOnlyJar(type: Jar, dependsOn: compilePalJava) {
+    description = 'Creates a stripped Pal jar containing only the Pal main library. Used for building the Pal ' +
+            'annotations.'
+    appendix = 'libOnly'
     from sourceSets.pal.output
     configureManifest(manifest)
 }
 
 compilePal_annotationsJava {
-    dependsOn(preJar)
-    setCompilerJVMArgs(compilePal_annotationsJava, preJar)
-//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000"
+    dependsOn(compilePalJava, libOnlyJar)
+    setCompilerJVMArgs(compilePal_annotationsJava, libOnlyJar)
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
-jar {
-    dependsOn(generateJNIHeaders, compilePalJava, compilePal_annotationsJava)
+//Required to build Pal annotation processors
+task libAndAnnotationsJar(type: Jar, dependsOn: compilePal_annotationsJava) {
+    description = 'Creates a Pal jar without annotation processors for the default annotations. Used for building ' +
+            'the Pal annotation processors.'
+    appendix = 'libAndAnnotations'
     from sourceSets.pal.output
     from sourceSets.pal_annotations.output
     configureManifest(manifest)
+    manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal'
+    )
+}
+
+compilePal_annotation_processorsJava {
+    dependsOn(compilePal_annotationsJava)
+    setCompilerJVMArgs(compilePal_annotation_processorsJava, libAndAnnotationsJar)
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+}
+
+task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
+    description = 'Creates a full Pal jar with the original Pal annotation definitions. Used to recompile the ' +
+            'annotations.'
+    appendix = 'preCompile'
+    from sourceSets.pal.output
+    from sourceSets.pal_annotations.output
+    from sourceSets.pal_annotation_processors.output
+    configureManifest(manifest)
+    manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
+            'Pal-Processors' : 'io.github.matthewacon.pal.processors'
+    )
+}
+
+compilePal_annotations_recompileJava {
+    dependsOn(compilePal_annotation_processorsJava)
+    setCompilerJVMArgs(compilePal_annotations_recompileJava, preCompileJar)
+}
+
+//The full Pal jar, including the main library, default annotations and annotation processors
+jar {
+    dependsOn(
+            generateJNIHeaders,
+            compilePalJava,
+            compilePal_annotationsJava,
+            compilePal_annotation_processorsJava,
+            compilePal_annotations_recompileJava
+    )
+    from sourceSets.pal.output
+//    from sourceSets.pal_annotations.output
+    from sourceSets.pal_annotations_recompile.output
+    from sourceSets.pal_annotation_processors.output
+    configureManifest(manifest)
+    manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
+            'Pal-Processors' : 'io.github.matthewacon.pal.processors'
+    )
 }
 
 compileExampleJava {
     dependsOn(jar)
     setCompilerJVMArgs(compileExampleJava, jar)
-//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8001"
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006"
 }
 
 task exampleJar(type: Jar, dependsOn: compileExampleJava) {

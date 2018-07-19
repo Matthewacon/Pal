@@ -158,9 +158,9 @@ public final class NativeUtils {
   }
  }
 
- protected static native <T> T getInstanceFromStack(final int depth) throws Exception;
+ public static native <T> T getInstanceFromStack(final int depth) throws Exception;
 
- protected static <T> int firstInstanceOfClassOnStack(Class<T> clazz) {
+ public static <T> int firstInstanceOfClassOnStack(Class<T> clazz) {
   int frame = 0;
   final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
   for (int i = 0; i < trace.length; i++) {
@@ -174,7 +174,7 @@ public final class NativeUtils {
   return frame-1;
  }
 
- protected static Vector<String> getLoadedLibraryNames(final ClassLoader loader) {
+ public static Vector<String> getLoadedLibraryNames(final ClassLoader loader) {
   try {
    return (Vector<String>)ClassLoader_nativeLibraries.get(loader);
   } catch(Throwable t) {
@@ -184,7 +184,7 @@ public final class NativeUtils {
   }
  }
 
- protected static boolean isLibraryLoaded(final String name, final ClassLoader... classLoaders) {
+ public static boolean isLibraryLoaded(final String name, final ClassLoader... classLoaders) {
   boolean loaded = false;
   if (classLoaders == null || classLoaders.length == 0) {
    ClassLoader parentLoader = ClassLoader.getSystemClassLoader();
@@ -211,7 +211,7 @@ public final class NativeUtils {
   return loaded;
  }
 
- protected static boolean unloadLibrary(final String name, final ClassLoader... classLoaders) {
+ public static boolean unloadLibrary(final String name, final ClassLoader... classLoaders) {
   boolean libraryRemoved = false;
   if (classLoaders == null || classLoaders.length == 0) {
    libraryRemoved |= unloadLibrary(name, ClassLoader.getSystemClassLoader());

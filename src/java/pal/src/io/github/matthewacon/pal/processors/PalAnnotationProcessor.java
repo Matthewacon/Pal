@@ -1,4 +1,4 @@
-package io.github.matthewacon.pal;
+package io.github.matthewacon.pal.processors;
 
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
@@ -7,6 +7,8 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
+import io.github.matthewacon.pal.*;
+import io.github.matthewacon.pal.api.IPalProcessor;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -27,10 +29,7 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
   JAVACOMPILER_todo,
   JAVACELEMENTS_javaCompiler;
 
- public static final DisposableClassLoader dcl;
-
  static {
-  dcl = new DisposableClassLoader(PalAgent.getInstrumentation());
   final String tempDir = System.getProperty("java.io.tmpdir");
   final File nativeLib = new File(tempDir + "/libpal.so");
   nativeLib.deleteOnExit();
@@ -57,10 +56,6 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
    throw ExceptionUtils.initFatal(t);
   }
  }
-
-// public PalAnnotationProcessor() {
-////  INSTANCE = this;
-// }
 
  private JavacProcessingEnvironment pe;
  private JavaCompiler compiler;
@@ -110,7 +105,7 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
    this.trees = Trees.instance(pe);
 //   this.main = (Main)JAVACTASKIMPL_compilerMain.get(JAVACTREES_javacTaskImpl.get(trees));
 //   this.classWriter = ClassWriter.instance(context);
-   new CompilerHooks(dcl, javacFileManager);
+//   new CompilerHooks(PalMain.PAL_CLASSLOADER, javacFileManager);
   } catch(Throwable t) {
    ExceptionUtils.initFatal(t);
   }
@@ -118,7 +113,7 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
 
  @Override
  public boolean process(Set<? extends TypeElement> set, RoundEnvironment re) {
-  System.out.println();
+  System.out.println("PAL ANNOTATION PROCESSOR INVOKED!");
 //  for (MetaAnnotation ma : MetaAnnotation.values()) {
 //   for (Element te : re.getElementsAnnotatedWith(ma.metaAnnotation)) {
 //    final PackageElement packageElement = (PackageElement)te.getEnclosingElement();
