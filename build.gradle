@@ -97,28 +97,19 @@ dependencies {
 
 model {
     tasks.linkPalSharedLibrary {
-//        for (final file in it.outputs.files.files) {
-//            println file
-//            if (file.isFile()) {
+        it.mustRunAfter(compilePalJava)
         final Object ref = it
         final File output = ref.outputs.files.files.getAt(1)
         tasks.withType(JavaCompile) {
-//            it.dependsOn(ref)
             if (!it.equals(compilePalJava)) {
-                //TODO For some reason, this does not work...
                 it.dependsOn(ref)
                 it.ext.sharedLibrary = output
             }
-//            println "${it} :: ${it.getDependsOn()}"
         }
         tasks.withType(Jar) {
-//            println "${it} :: ${output}"
             it.into("") { from output }
             it.dependsOn(ref)
         }
-//                break
-//            }
-//        }
     }
     tasks.compilePalSharedLibraryPalCpp {
         it.dependsOn(generateJNIHeaders)
@@ -277,9 +268,7 @@ task(generateJNIHeaders) {
             threads.add(t)
         }
         boolean finished = false
-//        int iteration = 0
         while (!finished) {
-//            iteration++
             finished = true
             for(thread in threads) {
                 if (thread.getState() != Thread.State.TERMINATED) {
@@ -287,7 +276,6 @@ task(generateJNIHeaders) {
                     break
                 }
             }
-//            println "Iteration: ${iteration} :: Finished: ${finished}"
         }
         threads.clear()
         println new String(stdOut.toByteArray())
