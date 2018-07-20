@@ -71,6 +71,7 @@ public final class PalMain {
    while (manifests.hasMoreElements()) {
     final URL manifestURL = manifests.nextElement();
     final Manifest manifest = new Manifest(manifestURL.openStream());
+    //TODO add support for multi-package values (split on ':')
     manifest.getMainAttributes().forEach((final Object key, final Object value) -> {
      if (key instanceof Attributes.Name && value instanceof String) {
       if (key.toString().equals("Pal-Processors")) {
