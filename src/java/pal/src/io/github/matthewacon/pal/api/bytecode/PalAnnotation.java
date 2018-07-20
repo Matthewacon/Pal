@@ -1,13 +1,6 @@
-package io.github.matthewacon.pal;
-
-import io.github.matthewacon.pal.api.IPalAnnotation;
-import io.github.matthewacon.pal.api.IPalProcessor;
-import io.github.matthewacon.pal.api.PalBytecodeProcessor;
-import net.bytebuddy.dynamic.DynamicType;
+package io.github.matthewacon.pal.api.bytecode;
 
 import java.lang.annotation.*;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 /**Defines a Pal library annotation. Anything annotated with this will be subject to any processors defined in
  *

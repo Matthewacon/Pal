@@ -71,14 +71,13 @@ public final class CompilerHooks {
     ExceptionUtils.initFatal(e);
    }
   }
-  //TODO finish eventing
   final Class<?>[] definedClasses = dcl.defineClasses(orderedDefinitions);
   //TODO remove debug statement
   for (final Class<?> clazz : definedClasses) {
    System.out.println("Defined: " + clazz);
   }
   if (openCompilers == 0) {
-
+   PalMain.onCompileFinished(definedClasses);
   }
  }
 

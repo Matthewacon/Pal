@@ -30,19 +30,7 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
   JAVACELEMENTS_javaCompiler;
 
  static {
-  final String tempDir = System.getProperty("java.io.tmpdir");
-  final File nativeLib = new File(tempDir + "/libpal.so");
-  nativeLib.deleteOnExit();
-  //TODO multiplatform (use gradle string replacement)
-  try(final InputStream nativeLibIS = PalAnnotationProcessor.class.getResourceAsStream("/libpal.so")) {
-   if (!nativeLib.exists()) nativeLib.createNewFile();
-   Files.copy(nativeLibIS, nativeLib.toPath(), StandardCopyOption.REPLACE_EXISTING);
-   //Unload the native lib if it's already loaded (found that out the hard way, working with gradle...)
-   if (NativeUtils.isLibraryLoaded(nativeLib.getAbsolutePath())) {
-    NativeUtils.unloadLibrary(nativeLib.getAbsolutePath());
-   }
-   //Load pal native library
-   System.load(nativeLib.getAbsolutePath());
+  try {
    JAVACTREES_javacTaskImpl = JavacTrees.class.getDeclaredField("javacTaskImpl");
    JAVACTREES_javacTaskImpl.setAccessible(true);
    JAVACTASKIMPL_compilerMain = JavacTaskImpl.class.getDeclaredField("compilerMain");
@@ -52,7 +40,6 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
    JAVACELEMENTS_javaCompiler = JavacElements.class.getDeclaredField("javaCompiler");
    JAVACELEMENTS_javaCompiler.setAccessible(true);
   } catch (Throwable t) {
-   if (nativeLib.exists()) nativeLib.delete();
    throw ExceptionUtils.initFatal(t);
   }
  }
@@ -91,6 +78,11 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
 //   return trees;
 //  }
 // };
+
+ public PalAnnotationProcessor() {
+  super();
+
+ }
 
  @Override
  public synchronized void init(ProcessingEnvironment pe) {

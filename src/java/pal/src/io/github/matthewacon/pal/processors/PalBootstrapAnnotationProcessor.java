@@ -12,6 +12,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,6 +52,7 @@ public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
 
  @Override
  public Set<String> getSupportedAnnotationTypes() {
+  final File garbage = PalMain.TEMP_DIR;
   return new HashSet<String>() {
    {
     add("io.github.matthewacon.pal.bytecode.PalProcessor");

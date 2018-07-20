@@ -1,20 +1,26 @@
 package io.github.matthewacon.pal;
 
 import com.sun.tools.javac.code.Symbol;
+import sun.misc.Launcher;
 
+import java.io.FileNotFoundException;
+import java.net.JarURLConnection;
+
+import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
+import java.net.URL;
 import java.security.ProtectionDomain;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public final class DisposableClassLoader extends ClassLoader {
  private static final class ClassLoaderNativeAccessor {
   public static final Method
-   defineClass0;
+   defineClass0,
+   findBootstrapClassOrNull;
 //   defineClass1,
 //   defineClass2,
 //   resolveClass0,
@@ -27,6 +33,8 @@ public final class DisposableClassLoader extends ClassLoader {
    try {
     defineClass0 = ClassLoader.class.getDeclaredMethod("defineClass0", String.class, byte[].class, int.class, int.class, ProtectionDomain.class);
     defineClass0.setAccessible(true);
+    findBootstrapClassOrNull = ClassLoader.class.getDeclaredMethod("findBootstrapClassOrNull", String.class);
+    findBootstrapClassOrNull.setAccessible(true);
 //    defineClass1 = ClassLoader.class.getDeclaredMethod("defineClass1", String.class, byte[].class, int.class, int.class, ProtectionDomain.class, String.class);
 //    defineClass1.setAccessible(true);
 //    defineClass2 = ClassLoader.class.getDeclaredMethod("defineClass2", String.class, ByteBuffer.class, int.class, int.class, ProtectionDomain.class, String.class);
@@ -47,27 +55,39 @@ public final class DisposableClassLoader extends ClassLoader {
   }
  }
 
-
-
  private final Instrumentation instrumentation;
  private final Vector<Class<?>> injectedClasses;
+ private final LinkedHashMap<String, HashSet<Class<?>>> discoveredClasses;
 
  public DisposableClassLoader(final Instrumentation instrumentation) {
   this.instrumentation = instrumentation;
   this.injectedClasses = new Vector<>();
+  this.discoveredClasses = new LinkedHashMap<>();
  }
 
+ //TODO DOC - Searches system classpath, bootstrap classpath and compiled classes
  public Class<?> findClass(final String name) throws ClassNotFoundException {
+  Class<?> clazz;
   try {
-   return super.findClass(name);
-  } catch(ClassNotFoundException e) {
-   for (final Class<?> injected : injectedClasses) {
-    if (injected.getName().equals(name)) {
-     return injected;
+   clazz = super.findClass(name);
+  } catch (ClassNotFoundException e) {
+   try {
+    if ((clazz = (Class<?>)ClassLoaderNativeAccessor.findBootstrapClassOrNull.invoke(this, name)) == null) {
+     for (final Class<?> injected : injectedClasses) {
+      if (injected.getName().equals(name)) {
+       clazz = injected;
+       break;
+      }
+     }
     }
+    if (clazz == null) {
+     throw e;
+    }
+   } catch (InvocationTargetException | IllegalAccessException e1) {
+    throw ExceptionUtils.initFatal(e1);
    }
-   throw e;
   }
+  return clazz;
  }
 
  //TODO (once NativeUtils are done) define java.lang.Class impl where ALL forms of instantiation (static included) throw
@@ -96,7 +116,7 @@ public final class DisposableClassLoader extends ClassLoader {
   return clazz;
  }
 
- //TODO DOC - Accepts an ordered list of class definitions
+ //TODO DOC - Accepts a list of class definitions and tries all registration orders (3-pass tolerance)
  public Class<?>[] defineClasses(final LinkedHashMap<Symbol.ClassSymbol, byte[]> orderedHierarchy) {
   LinkedList<Symbol.ClassSymbol> classQueue = new LinkedList<>(orderedHierarchy.keySet());
   final LinkedList<Symbol.ClassSymbol> failedDefinitions = new LinkedList<>();
@@ -146,5 +166,65 @@ public final class DisposableClassLoader extends ClassLoader {
    successiveDefinitionFailures += !successfullyDefined ? 1 : 0;
   }
   return successfulDefinitions.toArray(new Class<?>[0]);
+ }
+
+ //TODO multithread
+ public Class<?>[] getClassesInPackage(final String pckage) {
+  HashSet<Class<?>> classes;
+  //Only attempt discovery if the package has not already been scanned
+  if ((classes = discoveredClasses.get(pckage)) == null) {
+   classes = new HashSet<>();
+   final HashSet<String> discoveredFiles = new HashSet<>();
+   final String packagePath = pckage.replace(".", "/");
+   //TODO Recursively search files and directories on the classpath
+//   final String classpath = System.getProperty("java.class.path");
+//   final String[] paths = classpath.split(":");
+
+   //Discover files on the bootstrap classpath
+   for (final URL jar : Launcher.getBootstrapClassPath().getURLs()) {
+    try {
+     final String jarPath = jar.getPath();
+     final JarURLConnection connection =
+      (JarURLConnection) new URL("jar:file:///" + jarPath + "!/" + packagePath).openConnection();
+     final JarFile file = connection.getJarFile();
+     final Enumeration<JarEntry> entries = file.entries();
+//     System.out.println(file);
+     while (entries.hasMoreElements()) {
+      final JarEntry entry = entries.nextElement();
+//      System.out.println(entry);
+      final String name = entry.getName();
+      if (name.contains(packagePath) && !entry.isDirectory()) {
+       final String qualifiedPath =
+        name
+         .substring(name.indexOf(packagePath), name.length())
+         .replace("/", ".")
+         .replace(".class", "");
+       discoveredFiles.add(qualifiedPath);
+      }
+     }
+    } catch (FileNotFoundException e) {
+     continue;
+    } catch (IOException e) {
+     throw ExceptionUtils.initFatal(e);
+    }
+   }
+   if (discoveredFiles.size() > 0) {
+    try {
+     for (final String file : discoveredFiles) {
+      classes.add(findClass(file));
+     }
+    } catch (ClassNotFoundException e) {
+     throw ExceptionUtils.initFatal(e);
+    }
+    //Append discovered classes to global map
+    discoveredClasses.put(pckage, classes);
+   } else {
+    final FileNotFoundException fnfe = new FileNotFoundException(
+     "Error: Package '" + pckage + "' was not found in jars or folders on the classpath!"
+    );
+    throw ExceptionUtils.initFatal(fnfe);
+   }
+  }
+  return classes.toArray(new Class<?>[0]);
  }
 }

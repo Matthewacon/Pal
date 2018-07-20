@@ -1,6 +1,5 @@
-package io.github.matthewacon.pal.bytecode;
+package io.github.matthewacon.pal.api.bytecode;
 
-import io.github.matthewacon.pal.PalAnnotation;
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
 import net.bytebuddy.dynamic.DynamicType;
 
@@ -19,6 +18,8 @@ public @interface PalProcessor {
 
 @PalProcessor("CUSTOM STRING")
 final class PalProcessorProcessor implements PalBytecodeProcessor<PalProcessor> {
+ public PalProcessorProcessor() {}
+
  @Override
  public SimpleEntry<Class<?>, DynamicType.Builder<?>> process(final Class<?> clazz, final PalProcessor annotation) {
 //  PalMain.registerProcessor(this);

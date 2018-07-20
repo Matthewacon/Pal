@@ -79,6 +79,7 @@ configurations {
 
 dependencies {
 //    palCompile gradleApi()
+    palCompile 'com.github.stephenc.high-scale-lib:high-scale-lib:1.1.4'
     palCompile 'net.bytebuddy:byte-buddy-agent:1.8.12'
     palCompile 'net.bytebuddy:byte-buddy-dep:1.8.12'
     palCompile 'org.ow2.asm:asm:6.1.1'
@@ -343,6 +344,9 @@ task libOnlyJar(type: Jar, dependsOn: compilePalJava) {
     appendix = 'libOnly'
     from sourceSets.pal.output
     configureManifest(manifest)
+    manifest.attributes(
+            'Pal-Processors' : 'io.github.matthewacon.pal.api'
+    )
 }
 
 compilePal_annotationsJava {
@@ -359,9 +363,9 @@ task libAndAnnotationsJar(type: Jar, dependsOn: compilePal_annotationsJava) {
     from sourceSets.pal.output
     from sourceSets.pal_annotations.output
     configureManifest(manifest)
-    manifest.attributes(
-            'Pal-Annotations' : 'io.github.matthewacon.pal'
-    )
+//    manifest.attributes(
+//            'Pal-Annotations' : 'io.github.matthewacon.pal'
+//    )
 }
 
 compilePal_annotation_processorsJava {
@@ -380,7 +384,7 @@ task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
-            'Pal-Annotations' : 'io.github.matthewacon.pal',
+//            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.processors'
     )
 }
@@ -406,7 +410,7 @@ jar {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
-            'Pal-Annotations' : 'io.github.matthewacon.pal',
+//            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.processors'
     )
 }
