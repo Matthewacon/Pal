@@ -3,6 +3,7 @@ package io.github.matthewacon.pal;
 import com.sun.tools.javac.code.Symbol;
 import sun.misc.Launcher;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.JarURLConnection;
 
@@ -11,6 +12,7 @@ import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.jar.JarEntry;
@@ -168,46 +170,96 @@ public final class DisposableClassLoader extends ClassLoader {
   return successfulDefinitions.toArray(new Class<?>[0]);
  }
 
- //TODO multithread
+ //TODO clean this up
+ private void scanClassesInJar(final String jarPath, final String pckage, final String packageAsPath, final HashSet<String> discoveredFiles) throws FileNotFoundException {
+  try {
+   final JarURLConnection connection =
+    (JarURLConnection) new URL("jar:file:///" + jarPath + "!/" + packageAsPath).openConnection();
+   final JarFile file = connection.getJarFile();
+   final Enumeration<JarEntry> entries = file.entries();
+   while (entries.hasMoreElements()) {
+    final JarEntry entry = entries.nextElement();
+    final String name = entry.getName();
+    if (name.contains(packageAsPath) && !entry.isDirectory()) {
+     final String qualifiedPath =
+      name
+       .substring(name.indexOf(packageAsPath), name.length())
+       .replace("/", ".")
+       .replace(".class", "");
+     discoveredFiles.add(qualifiedPath);
+    }
+   }
+  } catch (FileNotFoundException e) {
+   throw e;
+  } catch (IOException e) {
+   throw ExceptionUtils.initFatal(e);
+  }
+ }
+
+ //TODO clean this up
  public Class<?>[] getClassesInPackage(final String pckage) {
   HashSet<Class<?>> classes;
-  //Only attempt discovery if the package has not already been scanned
+  //Only attempt discovery if the package has not been scanned already
   if ((classes = discoveredClasses.get(pckage)) == null) {
    classes = new HashSet<>();
    final HashSet<String> discoveredFiles = new HashSet<>();
-   final String packagePath = pckage.replace(".", "/");
-   //TODO Recursively search files and directories on the classpath
-//   final String classpath = System.getProperty("java.class.path");
-//   final String[] paths = classpath.split(":");
-
-   //Discover files on the bootstrap classpath
-   for (final URL jar : Launcher.getBootstrapClassPath().getURLs()) {
-    try {
-     final String jarPath = jar.getPath();
-     final JarURLConnection connection =
-      (JarURLConnection) new URL("jar:file:///" + jarPath + "!/" + packagePath).openConnection();
-     final JarFile file = connection.getJarFile();
-     final Enumeration<JarEntry> entries = file.entries();
-//     System.out.println(file);
-     while (entries.hasMoreElements()) {
-      final JarEntry entry = entries.nextElement();
-//      System.out.println(entry);
-      final String name = entry.getName();
-      if (name.contains(packagePath) && !entry.isDirectory()) {
-       final String qualifiedPath =
-        name
-         .substring(name.indexOf(packagePath), name.length())
-         .replace("/", ".")
-         .replace(".class", "");
-       discoveredFiles.add(qualifiedPath);
-      }
-     }
-    } catch (FileNotFoundException e) {
-     continue;
-    } catch (IOException e) {
-     throw ExceptionUtils.initFatal(e);
+   final String packageAsPath = pckage.replace(".", "/");
+   final Vector<String> paths = new Vector<>();
+   //All files on the classpath
+   for (final String path : System.getProperty("java.class.path").split(":")) {
+    if (!path.isEmpty() && new File(path).exists()) {
+     paths.add(path);
     }
    }
+   //All files on the bootstrap classpath
+   for (final URL url : Launcher.getBootstrapClassPath().getURLs()) {
+    paths.add(url.getPath());
+   }
+   //Class discovery (recursively searches directories)
+   for (final String path : paths) {
+    if (path.endsWith(".jar")) {
+     try {
+      scanClassesInJar(path, pckage, packageAsPath, discoveredFiles);
+     } catch (FileNotFoundException e) {/*Not fatal. Move onto next file.*/}
+    } else if (path.endsWith(".class")) {
+     if (path.contains(packageAsPath)) {
+      final String qualifiedPath = path
+       .substring(path.indexOf(packageAsPath), path.length())
+       .replace("/", ".")
+       .replace(".class", "");
+      discoveredFiles.add(qualifiedPath);
+     }
+    } else {
+     if (new File(path).isDirectory()) {
+      try {
+       Files
+        .walk(new File(path).toPath())
+        .filter(Files::isRegularFile)
+        .forEach(p -> {
+         final String fullPath = p.toString();
+         if (fullPath.endsWith(".jar")) {
+          try {
+           scanClassesInJar(fullPath, pckage, packageAsPath, discoveredFiles);
+          } catch (FileNotFoundException e) {/*Not fatal. Move onto next file*/}
+         } else if (fullPath.endsWith(".class")) {
+          if (fullPath.contains(packageAsPath)) {
+           final String qualifiedPath = fullPath
+            .substring(fullPath.indexOf(packageAsPath), fullPath.length())
+            .replace("/", ".")
+            .replace(".class", "");
+           discoveredFiles.add(qualifiedPath);
+          }
+         }
+        });
+      } catch (Throwable t) {
+       //TODO not necessarily fatal
+       throw ExceptionUtils.initFatal(t);
+      }
+     }
+    }
+   }
+
+   //Define all discovered classes
    if (discoveredFiles.size() > 0) {
     try {
      for (final String file : discoveredFiles) {
@@ -220,7 +272,7 @@ public final class DisposableClassLoader extends ClassLoader {
     discoveredClasses.put(pckage, classes);
    } else {
     final FileNotFoundException fnfe = new FileNotFoundException(
-     "Error: Package '" + pckage + "' was not found in jars or folders on the classpath!"
+     "Error: Package '" + pckage + "' was not found on the classpath!"
     );
     throw ExceptionUtils.initFatal(fnfe);
    }

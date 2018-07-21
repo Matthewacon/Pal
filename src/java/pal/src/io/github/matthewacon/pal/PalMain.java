@@ -27,8 +27,6 @@ public final class PalMain {
  public static final DisposableClassLoader PAL_CLASSLOADER;
  public static final File TEMP_DIR;
 
-// private static final LinkedHashSet<? super JavaFileManager> FILE_MANAGERS;
-
  //2 states, initially NonBlockingHashMap<same erasure>, then LinkedHashMap<same erasure> after detection and ordering
  private static Map<Class<? extends Annotation>, ? super IPalProcessor<?>> REGISTERED_PROCESSORS;
  private static LinkedHashSet<String> REGISTERED_PROCESSOR_PATHS;
@@ -223,6 +221,7 @@ public final class PalMain {
   System.out.println();
  }
 
+ //Not instantiable. All class functions and properties are static
  private PalMain() {}
 
  //Apply
