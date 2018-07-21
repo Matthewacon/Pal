@@ -171,6 +171,7 @@ public final class DisposableClassLoader extends ClassLoader {
  }
 
  //TODO clean this up
+ //TODO Without multi-threading, this will not scale well for large classpaths
  private void scanClassesInJar(final String jarPath, final String pckage, final String packageAsPath, final HashSet<String> discoveredFiles) throws FileNotFoundException {
   try {
    final JarURLConnection connection =
@@ -197,6 +198,7 @@ public final class DisposableClassLoader extends ClassLoader {
  }
 
  //TODO clean this up
+ //TODO Without multi-threading, this will not scale well for large classpaths
  public Class<?>[] getClassesInPackage(final String pckage) {
   HashSet<Class<?>> classes;
   //Only attempt discovery if the package has not been scanned already

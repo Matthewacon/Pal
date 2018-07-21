@@ -1,8 +1,9 @@
 package io.github.matthewacon.pal.processors;
 
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import io.github.matthewacon.pal.PalMain;
+import io.github.matthewacon.pal.api.bytecode.PalAnnotation;
+import io.github.matthewacon.pal.api.bytecode.PalProcessor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -10,15 +11,11 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.tools.JavaFileManager;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.sun.tools.javac.util.Context;
-
-/**Bootstrapping processor for the {@link PalProcessor} annotation*/
+/**Bootstrapping processor for the {@link PalProcessor} and {@link PalAnnotation} annotations*/
 public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
  private final HashSet<String> detectedProcessors;
 
@@ -29,21 +26,21 @@ public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
  @Override
  public void init(final ProcessingEnvironment pe) {
   super.init(pe);
-//  final Context context = ((JavacProcessingEnvironment)pe).getContext();
-//  PalMain.registerJavaFileManager(context.get(JavaFileManager.class));
  }
 
  @Override
  public boolean process(final Set<? extends TypeElement> set, final RoundEnvironment re) {
   if (!re.processingOver()) {
-   //The set is guaranteed to only contain 1 element, since this implementation of AbstractProcessor only supports the
-   //io.github.matthewacon.pal.bytecode.PalProcessor annotation.
-   final Set<? extends Element> annotated = re.getElementsAnnotatedWith(set.iterator().next());
-   System.out.println(annotated.size());
-   for (final Element te : annotated) {
+   //Detect source Pal processors
+   for (final Element te : re.getElementsAnnotatedWith(PalProcessor.class)) {
     if (te instanceof Symbol.ClassSymbol) {
-//     ((Symbol.ClassSymbol)te).annotation
      PalMain.registerProcessor(((Symbol.ClassSymbol)te).flatname.toString());
+    }
+   }
+   //Detect source Pal annotations
+   for (final Element te : re.getElementsAnnotatedWith(PalAnnotation.class)) {
+    if (te instanceof Symbol.ClassSymbol) {
+     PalMain.registerAnnotation(((Symbol.ClassSymbol)te).flatname.toString());
     }
    }
   }
@@ -52,12 +49,10 @@ public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
 
  @Override
  public Set<String> getSupportedAnnotationTypes() {
-  final File garbage = PalMain.TEMP_DIR;
-  return new HashSet<String>() {
-   {
-    add("io.github.matthewacon.pal.bytecode.PalProcessor");
-   }
-  };
+  return new HashSet<String>() {{
+   add(PalProcessor.class.getName());
+   add(PalAnnotation.class.getName());
+  }};
  }
 
  @Override

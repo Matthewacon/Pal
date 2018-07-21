@@ -46,11 +46,11 @@ public final class CompilerHooks {
   }
   this.compilerOutput = new Vector<>();
   COMPILER_HOOKS.add(this);
+  PalMain.onCompileStarted();
  }
 
  //Define class in order of descending hierarchy (required to define inner classes)
  public void onCompilerClosed() {
-//  openCompilers -= 1;
   final LinkedList<Symbol.ClassSymbol> orderedHierarchy = new LinkedList<>();
   final LinkedHashMap<Symbol.ClassSymbol, byte[]> orderedDefinitions = new LinkedHashMap<>();
   int roundDepth = 0;
@@ -81,8 +81,18 @@ public final class CompilerHooks {
     ExceptionUtils.initFatal(e);
    }
   }
-  final Class<?>[] definedClasses = PalMain.PAL_CLASSLOADER.defineClasses(orderedDefinitions);
-  PalMain.onCompileFinished(definedClasses);
+  //Define all classes
+  final Class<?>[] compiledClasses = PalMain.PAL_CLASSLOADER.defineClasses(orderedDefinitions);
+  //TODO remove debug statement
+  if (compiledClasses.length > 0) {
+   System.out.println("Defined classes from '" + compiler + "':");
+   for (final Class<?> clazz : compiledClasses) {
+    System.out.println(clazz);
+   }
+   System.out.println();
+  }
+  //Signal compilation finished
+  PalMain.onCompileFinished();
  }
 
  public void onClassWrite(final ClassWriter writer, final Symbol.ClassSymbol symbol) {

@@ -8,20 +8,15 @@ import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import io.github.matthewacon.pal.*;
-import io.github.matthewacon.pal.api.IPalProcessor;
+import io.github.matthewacon.pal.api.bytecode.PalProcessor;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
-import java.io.*;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-@SupportedAnnotationTypes("org.github.matthewacon.pal.meta.*")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public final class PalAnnotationProcessor extends AbstractProcessor {
  private static final Field
   JAVACTREES_javacTaskImpl,
@@ -79,10 +74,9 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
 //  }
 // };
 
- public PalAnnotationProcessor() {
-  super();
-
- }
+// public PalAnnotationProcessor() {
+//  super();
+// }
 
  @Override
  public synchronized void init(ProcessingEnvironment pe) {
@@ -103,6 +97,7 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
   }
  }
 
+ //TODO execute sourcecode processors
  @Override
  public boolean process(Set<? extends TypeElement> set, RoundEnvironment re) {
   System.out.println("PAL ANNOTATION PROCESSOR INVOKED!");
@@ -135,5 +130,19 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
 ////   System.out.println();
 ////  }
   return true;
+ }
+
+ @Override
+ public Set<String> getSupportedAnnotationTypes() {
+  final HashSet<String> supportedAnnotations = new HashSet<>();
+  PalMain
+   .getRegisteredAnnotations()
+   .forEach(clazz -> supportedAnnotations.add(clazz.getName()));
+  return supportedAnnotations;
+ }
+
+ @Override
+ public SourceVersion getSupportedSourceVersion() {
+  return SourceVersion.latestSupported();
  }
 }

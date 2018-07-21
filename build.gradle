@@ -306,8 +306,6 @@ void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
 //    options.compilerArgs += '-proc:none'
     //Append all of the required libraries to the annotation processor classpath
     compileTask.options.annotationProcessorPath = jarTask.outputs.files + layout.files(dependencies)
-    //TODO Need to fetch output file from cppcompile task
-//    File file = jar.outputs.files.files.getAt(0)
     //Append all of the required libraries to the java compiler classpath
     String compileClasspath = ""
     int numDependencies = dependencies.size()
@@ -345,6 +343,7 @@ task libOnlyJar(type: Jar, dependsOn: compilePalJava) {
     from sourceSets.pal.output
     configureManifest(manifest)
     manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.api'
     )
 }
@@ -364,6 +363,7 @@ task libAndAnnotationsJar(type: Jar, dependsOn: compilePal_annotationsJava) {
     from sourceSets.pal_annotations.output
     configureManifest(manifest)
     manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.api'
     )
 }
@@ -384,7 +384,8 @@ task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
-            'Pal-Processors' : 'io.github.matthewacon.pal.api'
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
+            'Pal-Processors' : 'io.github.matthewacon.pal.api:io.github.matthewacon.pal.processors'
     )
 }
 
@@ -409,6 +410,7 @@ jar {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
+            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.api:io.github.matthewacon.pal.processors'
     )
 }
