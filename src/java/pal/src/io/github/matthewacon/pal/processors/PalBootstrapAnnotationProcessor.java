@@ -29,14 +29,14 @@ public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
  @Override
  public void init(final ProcessingEnvironment pe) {
   super.init(pe);
-  final Context context = ((JavacProcessingEnvironment)pe).getContext();
-  PalMain.registerJavaFileManager(context.get(JavaFileManager.class));
+//  final Context context = ((JavacProcessingEnvironment)pe).getContext();
+//  PalMain.registerJavaFileManager(context.get(JavaFileManager.class));
  }
 
  @Override
  public boolean process(final Set<? extends TypeElement> set, final RoundEnvironment re) {
   if (!re.processingOver()) {
-   //The set is gaurenteed to only contain 1 element, since this implementation of AbstractProcessor only supports the
+   //The set is guaranteed to only contain 1 element, since this implementation of AbstractProcessor only supports the
    //io.github.matthewacon.pal.bytecode.PalProcessor annotation.
    final Set<? extends Element> annotated = re.getElementsAnnotatedWith(set.iterator().next());
    System.out.println(annotated.size());

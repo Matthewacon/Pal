@@ -384,7 +384,6 @@ task preCompileJar(type: Jar, dependsOn: compilePal_annotation_processorsJava) {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
-//            'Pal-Annotations' : 'io.github.matthewacon.pal',
             'Pal-Processors' : 'io.github.matthewacon.pal.api'
     )
 }
@@ -410,8 +409,7 @@ jar {
     from sourceSets.pal_annotation_processors.output
     configureManifest(manifest)
     manifest.attributes(
-//            'Pal-Annotations' : 'io.github.matthewacon.pal',
-            'Pal-Processors' : 'io.github.matthewacon.pal.processors'
+            'Pal-Processors' : 'io.github.matthewacon.pal.api:io.github.matthewacon.pal.processors'
     )
 }
 

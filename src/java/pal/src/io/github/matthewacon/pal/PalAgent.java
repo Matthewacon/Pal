@@ -16,16 +16,18 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 public final class PalAgent {
  public static final class JavaCompilerInterceptors {
   public static final class Construct {
-   @Advice.OnMethodEnter
+   @Advice.OnMethodExit
    public static void intercept(@Advice.This JavaCompiler compiler) {
-    CompilerHooks.INSTANCE.onCompilerConstructed();
+    new CompilerHooks(compiler);
    }
   }
 
   public static final class Close {
    @Advice.OnMethodEnter
    public static void intercept(@Advice.This JavaCompiler compiler) {
-    CompilerHooks.INSTANCE.onCompilerClosed();
+    CompilerHooks
+     .forInstance(compiler)
+     .onCompilerClosed();
    }
   }
  }
@@ -70,7 +72,15 @@ public final class PalAgent {
    public static void intercept(@Advice.This ClassWriter writer) {
 //    System.out.println("Intercepted the writeClass method in writer: " + writer);
     if (lastCall.writer.equals(writer)) {
-     CompilerHooks.INSTANCE.onClassWrite(writer, (Symbol.ClassSymbol) lastCall.arguments[1]);
+//     CompilerHooks.INSTANCE.onClassWrite(writer, (Symbol.ClassSymbol) lastCall.arguments[1]);
+     final int depth = NativeUtils.firstInstanceOfClassOnStack(JavaCompiler.class);
+     try {
+      CompilerHooks
+       .forInstance(NativeUtils.getInstanceFromStack(depth))
+       .onClassWrite(writer, (Symbol.ClassSymbol)lastCall.arguments[1]);
+     } catch (Exception e) {
+      throw ExceptionUtils.initFatal(e);
+     }
     }
    }
   }

@@ -27,7 +27,7 @@ public final class PalMain {
  public static final DisposableClassLoader PAL_CLASSLOADER;
  public static final File TEMP_DIR;
 
- private static final LinkedHashSet<? super JavaFileManager> FILE_MANAGERS;
+// private static final LinkedHashSet<? super JavaFileManager> FILE_MANAGERS;
 
  //2 states, initially NonBlockingHashMap<same erasure>, then LinkedHashMap<same erasure> after detection and ordering
  private static Map<Class<? extends Annotation>, ? super IPalProcessor<?>> REGISTERED_PROCESSORS;
@@ -44,6 +44,7 @@ public final class PalMain {
    Files.copy(nativeLibIS, nativeLib.toPath(), StandardCopyOption.REPLACE_EXISTING);
    //Unload the native lib if it's already loaded (found that out the hard way, working with gradle...)
    if (NativeUtils.isLibraryLoaded(nativeLib.getAbsolutePath())) {
+    System.out.println("UNLOADED LIBRARY!");
     NativeUtils.unloadLibrary(nativeLib.getAbsolutePath());
    }
    //Load pal native library
@@ -58,7 +59,7 @@ public final class PalMain {
   TEMP_DIR = new File(System.getProperty("java.io.tmpdir") + "/palResources");
   TEMP_DIR.deleteOnExit();
 
-  FILE_MANAGERS = new LinkedHashSet<>();
+//  FILE_MANAGERS = new LinkedHashSet<>();
 //  REGISTERED_PROCESSORS = new LinkedHashMap<>();
   REGISTERED_PROCESSORS = new NonBlockingHashMap<>();
   REGISTERED_PROCESSOR_PATHS = new LinkedHashSet<>();
@@ -77,64 +78,65 @@ public final class PalMain {
       if (key.toString().equals("Pal-Processors")) {
 //       final Thread processorLoader = new Thread(() -> {
         try {
-         for (final Class<?> clazz : PAL_CLASSLOADER.getClassesInPackage(((String)value))) {
-          if (clazz.getAnnotation(PalProcessor.class) != null) {
-           if (IPalProcessor.class.isAssignableFrom(clazz)) {
+         for (final String pckage : ((String)value).split(":")) {
+          for (final Class<?> clazz : PAL_CLASSLOADER.getClassesInPackage(pckage)) {
+           if (clazz.getAnnotation(PalProcessor.class) != null) {
+            if (IPalProcessor.class.isAssignableFrom(clazz)) {
 //           boolean processorRegistered = false;
-            //TODO Break off into separate method and reinforce logic (not flexible enough for future changes to the api)
-            //Start generic parameter discovery
-            final Type genericSuperclass = clazz.getGenericSuperclass();
-            final Type[] genericInterfaces = clazz.getGenericInterfaces();
-            final Class<? extends Annotation> targetAnnotation;
-            GenericDiscovery:
-            if (ParameterizedType.class.isAssignableFrom(genericSuperclass.getClass())) {
-             final Type typeArgument = ((ParameterizedType)genericSuperclass).getActualTypeArguments()[0];
-             targetAnnotation = (Class<? extends Annotation>)PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
-            } else {
-             for (final Type type : genericInterfaces) {
-              if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
-               final Type typeArgument = ((ParameterizedType)type).getActualTypeArguments()[0];
-               targetAnnotation = (Class<? extends Annotation>)PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
-               break GenericDiscovery;
+             //TODO Break off into separate method and reinforce logic (not flexible enough for future changes to the api)
+             //Start generic parameter discovery
+             final Type genericSuperclass = clazz.getGenericSuperclass();
+             final Type[] genericInterfaces = clazz.getGenericInterfaces();
+             final Class<? extends Annotation> targetAnnotation;
+             GenericDiscovery:
+             if (ParameterizedType.class.isAssignableFrom(genericSuperclass.getClass())) {
+              final Type typeArgument = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
+              targetAnnotation = (Class<? extends Annotation>) PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
+             } else {
+              for (final Type type : genericInterfaces) {
+               if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
+                final Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
+                targetAnnotation = (Class<? extends Annotation>) PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
+                break GenericDiscovery;
+               }
               }
+              targetAnnotation = null;
              }
-             targetAnnotation = null;
-            }
-            //End generic parameter discovery
-            if (targetAnnotation == null) {
-             throw new IllegalArgumentException(
-              "Pal processors must specify which annotation they target as a generic parameter!"
-             );
-            }
-            final IPalProcessor<?> processor;
-            try {
-             final Constructor[] constructors = clazz.getConstructors();
-             Constructor defaultConstructor = null;
-             for (final Constructor constructor : constructors) {
-              if (constructor.getParameterCount() == 0 && (constructor.getModifiers() | Modifier.PUBLIC) == constructor.getModifiers()) {
-               defaultConstructor = constructor;
-               break;
+             //End generic parameter discovery
+             if (targetAnnotation == null) {
+              throw new IllegalArgumentException(
+               "Pal processors must specify which annotation they target as a generic parameter!"
+              );
+             }
+             final IPalProcessor<?> processor;
+             try {
+              final Constructor[] constructors = clazz.getConstructors();
+              Constructor defaultConstructor = null;
+              for (final Constructor constructor : constructors) {
+               if (constructor.getParameterCount() == 0 && (constructor.getModifiers() | Modifier.PUBLIC) == constructor.getModifiers()) {
+                defaultConstructor = constructor;
+                break;
+               }
               }
-             }
-             if (defaultConstructor != null) {
-              defaultConstructor.setAccessible(true);
-              processor = (IPalProcessor<?>)defaultConstructor.newInstance();
+              if (defaultConstructor != null) {
+               defaultConstructor.setAccessible(true);
+               processor = (IPalProcessor<?>) defaultConstructor.newInstance();
 //             } else if (constructors.length == 0) {
 //              processor = (IPalProcessor<?>)clazz.newInstance();
-             } else {
-              final InvalidClassException ice = new InvalidClassException(
-               "Pal processors must either define a public default constructor or none at all!"
+              } else {
+               final InvalidClassException ice = new InvalidClassException(
+                "Pal processors must either define a public default constructor or none at all!"
+               );
+               throw ExceptionUtils.initFatal(ice);
+              }
+             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+              final InstantiationException ie = new InstantiationException(
+               "Exception thrown while constructing Pal processor '" + clazz.getName() + "'!"
               );
-              throw ExceptionUtils.initFatal(ice);
+              ie.initCause(e);
+              throw ExceptionUtils.initFatal(ie);
              }
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-             final InstantiationException ie = new InstantiationException(
-              "Exception thrown while constructing Pal processor '" + clazz.getName() + "'!"
-             );
-             ie.initCause(e);
-             throw ExceptionUtils.initFatal(ie);
-            }
-            REGISTERED_PROCESSORS.put(targetAnnotation, processor);
+             REGISTERED_PROCESSORS.put(targetAnnotation, processor);
 //           if (clazz.isInstance(PalBytecodeProcessor.class)) {
 //            processorRegistered = true;
 //            final PalBytecodeProcessor<?> processor;
@@ -162,16 +164,17 @@ public final class PalMain {
 //             )
 //            );
 //           }
-           } else {
-            throw ExceptionUtils.initFatal(
-             new InvalidClassException(
-              clazz.getName() +
-               " must either implement " +
-               PalBytecodeProcessor.class.getName() +
-               " and/or " +
-               PalSourceProcessor.class.getName()
-             )
-            );
+            } else {
+             throw ExceptionUtils.initFatal(
+              new InvalidClassException(
+               clazz.getName() +
+                " must either implement " +
+                PalBytecodeProcessor.class.getName() +
+                " and/or " +
+                PalSourceProcessor.class.getName()
+              )
+             );
+            }
            }
           }
          }
@@ -212,10 +215,12 @@ public final class PalMain {
    re.initCause(t);
    throw re;
   }
-  System.out.println("Registered processors: ");
+  //TODO conditional debug
+  System.out.println(" ");
   REGISTERED_PROCESSORS.forEach((annotation, processor) ->
-   System.out.println(annotation.getClass() + " :: " + processor.getClass())
+   System.out.println(annotation + " :: " + processor.getClass())
   );
+  System.out.println();
  }
 
  private PalMain() {}
@@ -225,10 +230,12 @@ public final class PalMain {
 
  }
 
- protected static void onCompileFinished(final Class<?>[] definedClasses) {
-
+ protected static synchronized void onCompileFinished(final Class<?>[] definedClasses) {
+  //TODO conditional debug
+  for (final Class<?> clazz : definedClasses) {
+   System.out.println("Defined: " + clazz);
+  }
 //  loadAllProcessors();
-
  }
 
  private static void loadAllProcessors() {
@@ -258,11 +265,5 @@ public final class PalMain {
 
  public static synchronized void registerProcessor(@NotNull final Class<? extends IPalProcessor<?>> processor) {
   processor.getClass().getGenericSuperclass();
- }
-
- public static synchronized void registerJavaFileManager(@NotNull final JavaFileManager manager) {
-  if (FILE_MANAGERS.add(manager)) {
-   new CompilerHooks(PAL_CLASSLOADER, manager);
-  }
  }
 }

@@ -2,8 +2,8 @@
 #include <jni.h>
 
 #include "io_github_matthewacon_pal_NativeUtils.h"
-
 #include "exception_utils.h"
+#include "common.h"
 
 JNIEXPORT jobject JNICALL Java_io_github_matthewacon_pal_NativeUtils_getInstanceFromStack(JNIEnv *env, jclass ignored, jint depth) {
  JavaVM *vm;
@@ -25,8 +25,12 @@ JNIEXPORT jobject JNICALL Java_io_github_matthewacon_pal_NativeUtils_getInstance
   "Error retrieving the invoking thread!"
  );
  jobject obj;
-// jvmtiCapabilities returnedCapabilities;
-// jvmti->GetPotentialCapabilities(&returnedCapabilities);
+ EXCEPTION_ON_JVMTI_ERROR(
+  jvmti->AddCapabilities(&capabilities),
+  env,
+  "Could not register JNI capabilities!"
+ );
+// logFile << "can_access_local_variables = " << std::to_string(returnedCapabilities.can_access_local_variables);
  EXCEPTION_ON_JVMTI_ERROR(
   jvmti->GetLocalInstance(thread, depth, &obj),
   env,

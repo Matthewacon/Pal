@@ -4,10 +4,7 @@
 #include <jni.h>
 
 #include "exception_utils.h"
-
-static const jvmtiCapabilities capabilities = {
- .can_access_local_variables = 1
-};
+#include "common.h"
 
 static bool initialized = false;
 
