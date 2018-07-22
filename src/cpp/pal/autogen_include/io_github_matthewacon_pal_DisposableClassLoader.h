@@ -7,6 +7,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     io_github_matthewacon_pal_DisposableClassLoader
+ * Method:    redefineClass
+ * Signature: ([B)Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_io_github_matthewacon_pal_DisposableClassLoader_redefineClass
+  (JNIEnv *, jobject, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,2 +1,2 @@
-io.github.matthewacon.pal.processors.PalBootstrapAnnotationProcessor
-io.github.matthewacon.pal.processors.PalAnnotationProcessor
+io.github.matthewacon.pal.javax.processors.PalBootstrapAnnotationProcessor
+io.github.matthewacon.pal.javax.processors.PalAnnotationProcessor

@@ -1,11 +1,10 @@
 package io.github.matthewacon.pal;
 
-import io.github.matthewacon.pal.api.IPalAnnotation;
 import io.github.matthewacon.pal.api.IPalProcessor;
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
-import io.github.matthewacon.pal.api.PalSourceProcessor;
-import io.github.matthewacon.pal.api.bytecode.PalProcessor;
-import io.github.matthewacon.pal.processors.PalAnnotationProcessor;
+import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
+import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
+import io.github.matthewacon.pal.javax.processors.PalAnnotationProcessor;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
@@ -123,7 +122,7 @@ public final class PalMain {
    );
    System.out.println("\nDiscovered Pal Annotations: ");
    REGISTERED_ANNOTATIONS.forEach(annotation -> System.out.println(annotation));
-   //TODO execute bytecode processors
+   //TODO execute bytecode processors (support repeatable annotations)
 //           if (clazz.isInstance(PalBytecodeProcessor.class)) {
 //            processorRegistered = true;
 //            final PalBytecodeProcessor<?> processor;
@@ -134,7 +133,7 @@ public final class PalMain {
 //            }
 //            REGISTERED_PROCESSORS.put(targetAnnotation, processor);
 //           }
-//           if (clazz.isInstance(PalSourceProcessor.class)) {
+//           if (clazz.isInstance(PalSourcecodeProcessor.class)) {
 //            processorRegistered = true;
 //           }
 //           if (!processorRegistered) {
@@ -147,7 +146,7 @@ public final class PalMain {
 //               " must either implement " +
 //               PalBytecodeProcessor.class.getName() +
 //               " and/or " +
-//               PalSourceProcessor.class.getName()
+//               PalSourcecodeProcessor.class.getName()
 //             )
 //            );
 //           }
@@ -251,7 +250,7 @@ public final class PalMain {
        " must either implement " +
        PalBytecodeProcessor.class.getName() +
        " and/or " +
-       PalSourceProcessor.class.getName()
+       PalSourcecodeProcessor.class.getName()
      )
     );
    }

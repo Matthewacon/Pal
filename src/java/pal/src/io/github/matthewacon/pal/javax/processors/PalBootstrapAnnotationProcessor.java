@@ -1,9 +1,9 @@
-package io.github.matthewacon.pal.processors;
+package io.github.matthewacon.pal.javax.processors;
 
 import com.sun.tools.javac.code.Symbol;
 import io.github.matthewacon.pal.PalMain;
-import io.github.matthewacon.pal.api.bytecode.PalAnnotation;
-import io.github.matthewacon.pal.api.bytecode.PalProcessor;
+import io.github.matthewacon.pal.api.annotations.bytecode.PalAnnotation;
+import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;

@@ -1,8 +1,8 @@
 package io.github.matthewacon.pal.processors;
 
-import io.github.matthewacon.pal.Literal;
+import io.github.matthewacon.pal.api.annotations.sourcecode.Literal;
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
-import io.github.matthewacon.pal.api.bytecode.PalProcessor;
+import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
 import net.bytebuddy.dynamic.DynamicType;
 
 import java.util.AbstractMap;

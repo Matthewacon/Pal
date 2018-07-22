@@ -33,7 +33,6 @@ public final class PalAgent {
  }
 
  public static final class ClassWriterInterceptors {
-//  private static final class WriterCall {
   public static final class WriterCall {
    public final ClassWriter writer;
    public final Object[] arguments;

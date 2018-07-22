@@ -67,6 +67,10 @@ public final class DisposableClassLoader extends ClassLoader {
   this.discoveredClasses = new LinkedHashMap<>();
  }
 
+ //TODO DOC, IMPL - Redefines a class without the restrictions imposed by Instrumentation-based class redefinition
+ //Any properties in the class may be changed, added or removed, so long as the class bytecode is still valid
+ public native Class<?> redefineClass(final byte[] bytes) throws ClassNotFoundException, ClassFormatError;
+
  //TODO DOC - Searches system classpath, bootstrap classpath and compiled classes
  public Class<?> findClass(final String name) throws ClassNotFoundException {
   Class<?> clazz;

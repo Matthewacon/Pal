@@ -1,4 +1,4 @@
-package io.github.matthewacon.pal.api.bytecode;
+package io.github.matthewacon.pal.api.annotations.bytecode;
 
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
 import net.bytebuddy.dynamic.DynamicType;

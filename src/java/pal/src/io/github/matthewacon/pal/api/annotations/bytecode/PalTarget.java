@@ -1,6 +1,4 @@
-package io.github.matthewacon.pal;
-
-import io.github.matthewacon.pal.api.bytecode.PalAnnotation;
+package io.github.matthewacon.pal.api.annotations.bytecode;
 
 import java.lang.annotation.*;
 

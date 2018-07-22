@@ -1,6 +1,4 @@
-package io.github.matthewacon.pal;
-
-import io.github.matthewacon.pal.api.bytecode.PalAnnotation;
+package io.github.matthewacon.pal.api.annotations.bytecode;
 
 import java.lang.annotation.*;
 import java.lang.reflect.Modifier;
@@ -12,7 +10,7 @@ import java.lang.reflect.Modifier;
 public @interface MemberValue {
  Class<?> valueType();
  String valueName() default "value";
- int modifiers() default 0;
+ int modifiers() default Modifier.PUBLIC;
 
  @Retention(RetentionPolicy.RUNTIME)
  @Target(ElementType.ANNOTATION_TYPE)

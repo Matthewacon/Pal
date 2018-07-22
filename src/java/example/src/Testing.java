@@ -19,7 +19,9 @@
 //import java.lang.instrument.ClassDefinition;
 //import java.nio.file.Files;
 
-@io.github.matthewacon.pal.Enum
+import io.github.matthewacon.pal.api.annotations.bytecode.Enum;
+
+@Enum
 public class Testing {
  public static class Test {
   public static void test() {
