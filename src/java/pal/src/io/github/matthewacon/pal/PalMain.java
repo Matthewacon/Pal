@@ -8,6 +8,7 @@ import io.github.matthewacon.pal.javax.processors.PalAnnotationProcessor;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
+import org.cliffc.high_scale_lib.NonBlockingHashSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -28,7 +29,8 @@ public final class PalMain {
  public static final File TEMP_DIR;
 
  private static final HashSet<Class<? extends Annotation>> REGISTERED_ANNOTATIONS;
- private static final Map<Class<? extends Annotation>, ? super IPalProcessor<?>> REGISTERED_PROCESSORS;
+ private static final NonBlockingHashMap<Class<? extends Annotation>, NonBlockingHashSet<? super IPalProcessor<?>>>
+  REGISTERED_PROCESSORS;
 
  private static LinkedHashSet<String> REGISTERED_ANNOTATION_PATHS;
  private static LinkedHashSet<String> REGISTERED_PROCESSOR_PATHS;
@@ -105,7 +107,10 @@ public final class PalMain {
   return REGISTERED_ANNOTATIONS;
  }
 
- //Apply
+ public static Map<Class<? extends Annotation>, NonBlockingHashSet<? super IPalProcessor<?>>> getRegisteredAnnotationProcessors() {
+  return REGISTERED_PROCESSORS;
+ }
+
  protected static void onCompileStarted() {
   openCompilers++;
  }
@@ -242,7 +247,14 @@ public final class PalMain {
      throw ExceptionUtils.initFatal(ie);
     }
     REGISTERED_ANNOTATIONS.add(targetAnnotation);
-    REGISTERED_PROCESSORS.put(targetAnnotation, processor);
+    final NonBlockingHashSet<? super IPalProcessor<?>> processorSet;
+    if (REGISTERED_PROCESSORS.get(targetAnnotation) != null) {
+     processorSet = REGISTERED_PROCESSORS.get(targetAnnotation);
+    } else {
+     processorSet = new NonBlockingHashSet<>();
+    }
+    processorSet.add(processor);
+    REGISTERED_PROCESSORS.put(targetAnnotation, processorSet);
    } else {
     throw ExceptionUtils.initFatal(
      new InvalidClassException(

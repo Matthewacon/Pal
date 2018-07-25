@@ -4,10 +4,16 @@ import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
 import io.github.matthewacon.pal.api.annotations.bytecode.PalAnnotation;
 import net.bytebuddy.agent.builder.AgentBuilder;
 
+import javax.lang.model.element.Element;
 import java.lang.annotation.*;
 
 @PalAnnotation
-@Target(ElementType.ANNOTATION_TYPE)
+@Target({
+ ElementType.TYPE,
+ ElementType.ANNOTATION_TYPE,
+ ElementType.CONSTRUCTOR,
+ ElementType.METHOD
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Literal.Literals.class)
 public @interface Literal {
@@ -22,5 +28,10 @@ public @interface Literal {
 
  final class LiteralProcessor implements PalSourcecodeProcessor<Literal> {
   public LiteralProcessor() {}
+
+  @Override
+  public String process(Literal annotation, Element element, String code) {
+   return code;
+  }
  }
 }

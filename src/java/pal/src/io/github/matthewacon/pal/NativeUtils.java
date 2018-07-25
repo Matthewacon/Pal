@@ -166,7 +166,8 @@ public final class NativeUtils {
   for (int i = 0; i < trace.length; i++) {
    String name = trace[i].getClassName();
    //Subclasses push themselves to slot 0, above the target class
-   if (name.lastIndexOf("$") == -1 && name.equals(clazz.getName())) {
+//   if (name.lastIndexOf("$") == -1 && name.equals(clazz.getName())) {
+   if (name.equals(clazz.getName())) {
     frame = i;
     break;
    }

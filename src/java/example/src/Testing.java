@@ -20,10 +20,13 @@
 //import java.nio.file.Files;
 
 import io.github.matthewacon.pal.api.annotations.bytecode.Enum;
+import io.github.matthewacon.pal.api.annotations.sourcecode.Literal;
 
+@Literal(target = "SC", replacement = "static class")
 @Enum
 public class Testing {
  public static class Test {
+// public SC Test {
   public static void test() {
    System.out.println("Test test");
   }
