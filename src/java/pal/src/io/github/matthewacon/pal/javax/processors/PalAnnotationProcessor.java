@@ -91,16 +91,19 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
  @Override
  public boolean process(Set<? extends TypeElement> set, RoundEnvironment re) {
   try {
-   final Map<JavaFileObject, Object> contentCache =
-    (Map<JavaFileObject, Object>)BaseFileManager_contentCache.get(javaFileManager);
+   final Map<JavaFileObject, Object> contentCache = new HashMap<>();
+   contentCache.putAll((Map<JavaFileObject, Object>)BaseFileManager_contentCache.get(javaFileManager));
    final int
-    compilerStackDepth = NativeUtils.firstInstanceOfClassOnStack(JavaCompiler.class),
-    roundStackDepth = NativeUtils.firstInstanceOfClassOnStack(JavacProcessingEnvironment_Round);
+    compilerStackDepth = NativeUtils.firstDepthOfClassOnStack(JavaCompiler.class),
+    roundStackDepth = NativeUtils.firstDepthOfClassOnStack(JavacProcessingEnvironment_Round);
    final JavaCompiler compiler = NativeUtils.getInstanceFromStack(compilerStackDepth);
    final ParserFactory parserFactory = (ParserFactory)JavaCompiler_parserFactory.get(compiler);
    final Object round = NativeUtils.getInstanceFromStack(roundStackDepth);
    final List<JCTree.JCCompilationUnit> roots = new LinkedList<>();
    roots.addAll((List<JCTree.JCCompilationUnit>)JavacProcessingEnvironment_Round_roots.get(round));
+//   final String someCode = "@Literal(target=\"PFC\", replacement=\"public final class\")\nPFC AnotherTest {}";
+//   final JavacParser firstParser = parserFactory.newParser(someCode, true, true, true);
+//   JCTree.JCCompilationUnit someUnit = firstParser.parseCompilationUnit();
    //TODO remove debug
 //  System.out.println("PAL ANNOTATION PROCESSOR INVOKED!");
    for (final Class<? extends Annotation> annotation : PalMain.getRegisteredAnnotations()) {
@@ -207,6 +210,9 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
      );
     }
    }
+   final Map contentCacheMap = (Map)BaseFileManager_contentCache.get(javaFileManager);
+   contentCacheMap.clear();
+   contentCacheMap.putAll(contentCache);
   } catch (Throwable t) {
    throw ExceptionUtils.initFatal(t);
   }

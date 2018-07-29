@@ -1,5 +1,6 @@
 package io.github.matthewacon.pal;
 
+import io.github.matthewacon.pal.agent.PalAgent;
 import io.github.matthewacon.pal.api.IPalProcessor;
 import io.github.matthewacon.pal.api.PalBytecodeProcessor;
 import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
@@ -121,12 +122,13 @@ public final class PalMain {
    loadAllAnnotations();
    loadAllProcessors();
    //TODO conditional debug
-   System.out.println("Discovered Pal Processors: ");
-   REGISTERED_PROCESSORS.forEach((annotation, processor) ->
-    System.out.println(annotation + " :: " + processor.getClass())
-   );
-   System.out.println("\nDiscovered Pal Annotations: ");
-   REGISTERED_ANNOTATIONS.forEach(annotation -> System.out.println(annotation));
+//   System.out.println("Discovered Pal Processors: ");
+//   REGISTERED_PROCESSORS.forEach((annotation, processor) ->
+//    System.out.println(annotation + " :: " + processor.getClass())
+//   );
+//   System.out.println("\nDiscovered Pal Annotations: ");
+//   REGISTERED_ANNOTATIONS.forEach(annotation -> System.out.println(annotation));
+   
    //TODO execute bytecode processors (support repeatable annotations)
 //           if (clazz.isInstance(PalBytecodeProcessor.class)) {
 //            processorRegistered = true;

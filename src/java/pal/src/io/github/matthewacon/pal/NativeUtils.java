@@ -160,7 +160,7 @@ public final class NativeUtils {
 
  public static native <T> T getInstanceFromStack(final int depth) throws Exception;
 
- public static <T> int firstInstanceOfClassOnStack(Class<T> clazz) {
+ public static <T> int firstDepthOfClassOnStack(final Class<T> clazz) {
   int frame = 0;
   final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
   for (int i = 0; i < trace.length; i++) {
@@ -173,6 +173,10 @@ public final class NativeUtils {
    }
   }
   return frame-1;
+ }
+
+ public static <T> T getInstanceFromStack(final Class<T> clazz) throws Exception {
+  return getInstanceFromStack(firstDepthOfClassOnStack(clazz));
  }
 
  public static Vector<String> getLoadedLibraryNames(final ClassLoader loader) {

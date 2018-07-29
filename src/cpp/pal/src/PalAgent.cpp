@@ -1,7 +1,6 @@
-#include <iostream>
-#include <fstream>
 #include <jvmti.h>
 #include <jni.h>
+#include <stdexcept>
 
 #include "exception_utils.h"
 #include "common.h"

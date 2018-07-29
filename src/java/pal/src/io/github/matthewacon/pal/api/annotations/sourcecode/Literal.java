@@ -2,7 +2,7 @@ package io.github.matthewacon.pal.api.annotations.sourcecode;
 
 import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
 import io.github.matthewacon.pal.api.annotations.bytecode.PalAnnotation;
-import net.bytebuddy.agent.builder.AgentBuilder;
+import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
 
 import javax.lang.model.element.Element;
 import java.lang.annotation.*;
@@ -26,8 +26,15 @@ public @interface Literal {
   Literal[] value();
  }
 
- final class LiteralProcessor implements PalSourcecodeProcessor<Literal> {
-  public LiteralProcessor() {}
+ @PalProcessor
+ final class LiteralProcessor extends PalSourcecodeProcessor<Literal> {
+  public LiteralProcessor() {
+   super();
+  }
+//
+//  public static String strip(Literal annotation, String code) {
+//   return null;
+//  }
 
   @Override
   public String process(Literal annotation, Element element, String code) {

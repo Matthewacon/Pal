@@ -230,7 +230,10 @@ task generateJNIHeaders() {
         1.upto(Runtime.getRuntime().availableProcessors()) {
             final Thread t = new Thread({
                 while(fileQueue.peek() != null) {
-                    String packagePath = packageFromFile(outputDir.getAbsolutePath() + "/", fileQueue.poll().getAbsolutePath())
+                    String packagePath = packageFromFile(
+                        outputDir.getAbsolutePath() + "/",
+                        fileQueue.poll().getAbsolutePath()
+                    )
                     stdOut.write("Generated headers for: '${packagePath}'\n".getBytes())
                     project.exec {
                         switch (JAVA_MAJOR) {
@@ -328,7 +331,7 @@ void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
 
 static void configureManifest(final Manifest manifest) {
     manifest.attributes(
-            'Premain-Class' : 'io.github.matthewacon.pal.PalAgent',
+            'Premain-Class' : 'io.github.matthewacon.pal.agent.PalAgent',
             'Can-Redefine-Classes': 'true',
             'Can-Retransform-Classes': 'true',
             'Can-Set-Native-Method-Prefix': 'true'
@@ -418,7 +421,7 @@ jar {
 compileExampleJava {
     dependsOn(jar)
     setCompilerJVMArgs(compileExampleJava, jar)
-    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 task exampleJar(type: Jar, dependsOn: compileExampleJava) {

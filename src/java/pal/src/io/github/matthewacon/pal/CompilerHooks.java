@@ -3,8 +3,14 @@ package io.github.matthewacon.pal;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import io.github.matthewacon.pal.agent.PalAgent;
 
+import javax.annotation.processing.Processor;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -19,13 +25,18 @@ import java.util.LinkedList;
 import java.util.Vector;
 
 public final class CompilerHooks {
- private static final Field JavaCompiler_context;
+ private static final Field
+  JavaCompiler_context,
+  JavaCompiler_parserFactory;
+
  private static final LinkedHashSet<CompilerHooks> COMPILER_HOOKS;
 
  static {
   try {
    JavaCompiler_context = JavaCompiler.class.getDeclaredField("context");
    JavaCompiler_context.setAccessible(true);
+   JavaCompiler_parserFactory = JavaCompiler.class.getDeclaredField("parserFactory");
+   JavaCompiler_parserFactory.setAccessible(true);
   } catch (Throwable t) {
    throw ExceptionUtils.initFatal(t);
   }
@@ -47,6 +58,33 @@ public final class CompilerHooks {
   this.compilerOutput = new Vector<>();
   COMPILER_HOOKS.add(this);
   PalMain.onCompileStarted();
+ }
+
+ public void onCompileStarted(
+  final List<JavaFileObject> inputFiles,
+  final List<String> classNames,
+  final Iterable<? extends Processor> processors) {
+  //TODO remove debug
+  System.out.println("COMPILE PROCESS STARTED");
+  try {
+   final Context context = new Context();
+   final JavaCompiler disposableCompiler = JavaCompiler.instance(context);
+   PalAgent.exclude(disposableCompiler, true, false);
+   final ParserFactory parserFactory = (ParserFactory)JavaCompiler_parserFactory.get(disposableCompiler);
+   System.out.println("Parser Factory: " + parserFactory);
+   final String someCode = "@Literal(target=\"PFC\", replacement=\"public final class\")\nPFC AnotherTest {}";
+   final JavacParser firstParser = parserFactory.newParser(someCode, true, true, true);
+   System.out.println("Parser: " + firstParser);
+   JCTree.JCCompilationUnit someUnit = firstParser.parseCompilationUnit();
+   System.out.println("NEW DEFINITION: " + someUnit);
+
+//   for (final JavaFileObject file : inputFiles) {
+//    final String code = new String(Files.readAllBytes(new File(file.toUri().getPath()).toPath()));
+//    System.out.println("INPUT FILE: " + file);
+//   }
+  } catch (Throwable t) {
+   throw ExceptionUtils.initFatal(t);
+  }
  }
 
  //Define class in order of descending hierarchy (required to define inner classes)
@@ -82,9 +120,11 @@ public final class CompilerHooks {
    }
   }
   //Define all classes
+
   final Class<?>[] compiledClasses = PalMain.PAL_CLASSLOADER.defineClasses(orderedDefinitions);
   //TODO remove debug statement
   if (compiledClasses.length > 0) {
+   System.out.println("--------------------------------------------------");
    System.out.println("Defined classes from '" + compiler + "':");
    for (final Class<?> clazz : compiledClasses) {
     System.out.println(clazz);

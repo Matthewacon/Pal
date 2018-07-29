@@ -27,6 +27,6 @@ include_directories(${JNI_INCLUDE_DIRS} ${JAVA_INCLUDE_PATH} include/ autogen_in
 link_libraries(${JNI_LIBRARIES} ${JAVA_JVM_LIBRARY})
 set(SOURCE_FILES src/PalAgent.cpp src/NativeUtils.cpp)
 #add_executable(pal ${SOURCE_FILES})
-add_library(pal_shared SHARED ${SOURCE_FILES} include/common.h)
+add_library(pal_shared SHARED ${SOURCE_FILES} include/common.h src/DisposableClassLoader.cpp)
 add_library(pal_static STATIC ${SOURCE_FILES})
 message(STATUS ${JNI_INCLUDE_DIRS})
