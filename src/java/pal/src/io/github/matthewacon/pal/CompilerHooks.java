@@ -19,10 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
+import java.util.stream.Stream;
 
 public final class CompilerHooks {
  private static final Field
@@ -71,12 +69,26 @@ public final class CompilerHooks {
    final JavaCompiler disposableCompiler = JavaCompiler.instance(context);
    PalAgent.exclude(disposableCompiler, true, false);
    final ParserFactory parserFactory = (ParserFactory)JavaCompiler_parserFactory.get(disposableCompiler);
-   System.out.println("Parser Factory: " + parserFactory);
-   final String someCode = "@Literal(target=\"PFC\", replacement=\"public final class\")\nPFC AnotherTest {}";
-   final JavacParser firstParser = parserFactory.newParser(someCode, true, true, true);
-   System.out.println("Parser: " + firstParser);
-   JCTree.JCCompilationUnit someUnit = firstParser.parseCompilationUnit();
-   System.out.println("NEW DEFINITION: " + someUnit);
+//   System.out.println("Parser Factory: " + parserFactory);
+   final Vector<JCTree.JCCompilationUnit> compilationUnits = new Vector<>();
+   Files
+    .walk(new File("/home/matthew/Git/pal/src/java/pal/res/class_templates/tests").toPath())
+    .filter(Files::isRegularFile)
+    .forEach(file -> {
+     try {
+      final String code = new String(Files.readAllBytes(file.toAbsolutePath()));
+      final JavacParser parser = parserFactory.newParser(code, true, true, true);
+      compilationUnits.add(parser.parseCompilationUnit());
+     } catch (Throwable t) {
+      throw new RuntimeException("Encountered exception parsing test resources!", t);
+     }
+    });
+   System.out.println("Compiled resources: " + compilationUnits.size());
+//   final String someCode = "@Literal(target=\"PFC\", replacement=\"public final class\")\nPFC AnotherTest {}";
+//   final JavacParser firstParser = parserFactory.newParser(someCode, true, true, true);
+//   System.out.println("Parser: " + firstParser);
+//   JCTree.JCCompilationUnit someUnit = firstParser.parseCompilationUnit();
+//   System.out.println("NEW DEFINITION: " + someUnit);
 
 //   for (final JavaFileObject file : inputFiles) {
 //    final String code = new String(Files.readAllBytes(new File(file.toUri().getPath()).toPath()));

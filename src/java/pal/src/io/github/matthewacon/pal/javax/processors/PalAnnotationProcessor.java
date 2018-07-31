@@ -32,6 +32,7 @@ import java.util.*;
 import io.github.matthewacon.pal.*;
 import io.github.matthewacon.pal.api.IPalProcessor;
 import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
+import io.github.matthewacon.pal.util.CompilerUtils;
 
 public final class PalAnnotationProcessor extends AbstractProcessor {
  //TODO clean all reflection related code and implement a security manager
@@ -168,20 +169,11 @@ public final class PalAnnotationProcessor extends AbstractProcessor {
       roots.remove(oldUnit);
       roots.add(index, newCompilationUnit);
      }
-     //Convert LinkedList<JCCompilationUnit> to com.sun.tools.javac.util.List<JCCompilationUnit>
-     com.sun.tools.javac.util.List<JCTree.JCCompilationUnit> newRoots =
-      (com.sun.tools.javac.util.List<JCTree.JCCompilationUnit>)javac_util_List.newInstance(
-      null,
-      null
+     JavacProcessingEnvironment_Round_roots.set(
+      round,
+      //Convert LinkedList<JCCompilationUnit> to com.sun.tools.javac.util.List<JCCompilationUnit>
+      CompilerUtils.constructList(roots)
      );
-     for (int index = roots.size()-1; index > -1; index--) {
-      newRoots = (com.sun.tools.javac.util.List<JCTree.JCCompilationUnit>)javac_util_List.newInstance(
-        roots.get(index),
-        newRoots
-       );
-     }
-     //Set the new source rounds
-     JavacProcessingEnvironment_Round_roots.set(round, newRoots);
      //Update symbol
      ((Symbol.ClassSymbol)element).sourcefile = newFileObject;
      //Update file manager contentCache

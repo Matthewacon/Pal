@@ -83,7 +83,7 @@ public final class PalAgent {
   PalAgent.instrumentation = instrumentation;
   final AgentBuilder.Ignored base = new AgentBuilder.Default()
 //   .with(new ByteBuddy().with(Implementation.Context.Default.Factory.INSTANCE))
-   .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
+//   .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
    .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
    .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
    .with(AgentBuilder.TypeStrategy.Default.REBASE)
