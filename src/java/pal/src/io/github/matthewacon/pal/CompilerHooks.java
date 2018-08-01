@@ -9,6 +9,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import io.github.matthewacon.pal.agent.PalAgent;
+import io.github.matthewacon.pal.util.CompilerUtils;
 
 import javax.annotation.processing.Processor;
 import javax.tools.FileObject;
@@ -83,20 +84,18 @@ public final class CompilerHooks {
       throw new RuntimeException("Encountered exception parsing test resources!", t);
      }
     });
-   System.out.println("Compiled resources: " + compilationUnits.size());
-//   final String someCode = "@Literal(target=\"PFC\", replacement=\"public final class\")\nPFC AnotherTest {}";
-//   final JavacParser firstParser = parserFactory.newParser(someCode, true, true, true);
-//   System.out.println("Parser: " + firstParser);
-//   JCTree.JCCompilationUnit someUnit = firstParser.parseCompilationUnit();
-//   System.out.println("NEW DEFINITION: " + someUnit);
-
-//   for (final JavaFileObject file : inputFiles) {
-//    final String code = new String(Files.readAllBytes(new File(file.toUri().getPath()).toPath()));
-//    System.out.println("INPUT FILE: " + file);
-//   }
+   System.out.println("Compilation units to process: " + compilationUnits.size());
+   long start = System.nanoTime();
+   compilationUnits.forEach(unit -> {
+    System.out.println("Processing compilation unit: " + unit.hashCode());
+    final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+    System.out.println("Stripped " + annotations.size() + " annotations\n");
+   });
+   System.out.println("Annotation stripping took: " + (System.nanoTime()-start) + "ns");
   } catch (Throwable t) {
    throw ExceptionUtils.initFatal(t);
   }
+  System.out.println();
  }
 
  //Define class in order of descending hierarchy (required to define inner classes)
