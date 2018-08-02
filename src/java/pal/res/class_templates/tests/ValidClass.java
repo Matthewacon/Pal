@@ -8,10 +8,10 @@ public final class Test<@DummyAnnotation T extends Annotation & IPalProcessor<@D
  @Literal(target="THE", replacement="END")
  public static String variable = "Hello World!";
 
- @DummyAnnotation
+ @DummyAnnotation("DUMMY VALUE")
  public static String @DummyAnnotation [] @DummyAnnotation [] @DummyAnnotation [] data;
 
- @Literal(target="ABCD", replacement="DCBA")
+ @Literal(target="ABCD", replacement=new String("DCBA"))
  public static void main(@Literal(target="EFGH", replacement="HGFE") String[] args) {
   System.out.println(variable);
  }

@@ -421,7 +421,7 @@ jar {
 compileExampleJava {
     dependsOn(jar)
     setCompilerJVMArgs(compileExampleJava, jar)
-//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 task exampleJar(type: Jar, dependsOn: compileExampleJava) {
