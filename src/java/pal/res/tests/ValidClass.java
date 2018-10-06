@@ -1,4 +1,5 @@
 import io.github.matthewacon.pal.api.annotations.bytecode.DummyAnnotation;
+import io.github.matthewacon.pal.api.annotations.sourcecode.Literal;
 import java.lang.annotation.Annotation;
 import io.github.matthewacon.pal.api.IPalProcessor;
 

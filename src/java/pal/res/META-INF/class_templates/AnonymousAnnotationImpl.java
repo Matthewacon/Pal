@@ -1,8 +1,4 @@
-import java.lang.annotation.Annotation;
-
-$IMPORT;
-
-public static final class $NAME implements $INTERFACE {
+new $INTERFACE() {
  @Override
  public Class<? extends Annotation> annotationType() {
   return $INTERFACE.class;

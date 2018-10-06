@@ -43,9 +43,7 @@ public final class CompilerUtils {
  }
 
  public static <T> java.util.List toList(final List<T> list) {
-  return new LinkedList<T>() {{
-   addAll(list);
-  }};
+  return new LinkedList<>(list);
  }
 
  //JCTree utilities
@@ -66,7 +64,7 @@ public final class CompilerUtils {
   return annotations;
  }
 
- //TODO There has to be a cleaner way to do this
+ //TODO There has to be a cleaner way to do this, reflection maybe?
  //TODO Create static final inner class that acts
  private static List<? super JCTree> nextDefinitionLayer(
   final List<? super JCTree> trees,
@@ -84,7 +82,6 @@ public final class CompilerUtils {
      definitions,
      preserved,
      JCAnnotation.class,
-//     annotation -> definitions.add(annotation)
      annotation -> {
       definitions.add(annotation.annotationType);
       definitions.addAll(annotation.args);
@@ -543,5 +540,45 @@ public final class CompilerUtils {
     }
    }
   };
+ }
+
+
+
+ public static String getFullyQuantifiedAnnotationName(final JCAnnotation annotation) {
+  final StringBuilder sb = new StringBuilder();
+  cswitch(annotation.annotationType,
+   ccase(
+    JCIdent.class,
+    ident -> sb.append(ident.name.toString())
+   ),
+   ccase(
+    JCFieldAccess.class,
+    field -> sb.append(field.toString())
+   ),
+   ccase(
+    null,
+    cdefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cdefault.getClass() + "'!");}
+   )
+  );
+  return sb.toString();
+ }
+
+ public static String getBaseName(final JCAnnotation annotation) {
+  final StringBuilder sb = new StringBuilder();
+  cswitch(annotation.annotationType,
+   ccase(
+    JCIdent.class,
+    ident -> sb.append(ident.name.toString())
+   ),
+   ccase(
+    JCFieldAccess.class,
+    field -> sb.append(field.name.toString())
+   ),
+   ccase(
+    null,
+    cdefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cdefault.getClass() + "'!");}
+   )
+  );
+  return sb.toString();
  }
 }

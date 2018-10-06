@@ -212,7 +212,7 @@ public final class PalAgent {
     field.set(null, PalAgent.instrumentation);
     field.setAccessible(false);
    } catch (IllegalAccessException e) {
-    ExceptionUtils.initFatal(e);
+    throw ExceptionUtils.initFatal(e);
    }
   });
   return PalAgent.instrumentation;

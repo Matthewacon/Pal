@@ -7,6 +7,7 @@ import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
 import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
 import io.github.matthewacon.pal.javax.processors.PalAnnotationProcessor;
 
+import io.github.matthewacon.pal.util.RuntimeAnnotationGenerator;
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import org.cliffc.high_scale_lib.NonBlockingHashSet;
@@ -27,6 +28,7 @@ import java.util.jar.Manifest;
 
 public final class PalMain {
  public static final DisposableClassLoader PAL_CLASSLOADER;
+ public static final RuntimeAnnotationGenerator ANNOTATION_GENERATOR;
  public static final File TEMP_DIR;
 
  private static final HashSet<Class<? extends Annotation>> REGISTERED_ANNOTATIONS;
@@ -60,6 +62,7 @@ public final class PalMain {
 
   //Initialize constants
   PAL_CLASSLOADER = new DisposableClassLoader(PalAgent.getInstrumentation());
+  ANNOTATION_GENERATOR = new RuntimeAnnotationGenerator();
   TEMP_DIR = new File(System.getProperty("java.io.tmpdir") + "/palResources");
   TEMP_DIR.deleteOnExit();
   REGISTERED_ANNOTATIONS = new HashSet<>();

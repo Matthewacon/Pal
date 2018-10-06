@@ -96,6 +96,51 @@ public final class DisposableClassLoader extends ClassLoader {
   return clazz;
  }
 
+ //TODO DOC - Returns a list of class candidates matching the given parameters
+ public HashSet<Class<?>> findClass(
+  //Not nullable
+  final String baseName,
+  //Not nullable (same as baseName if unknown)
+  final String qualifiedName,
+  //Nullable
+  final String pckage,
+  //Nullable
+  final List<String> imports
+ ) {
+  final HashSet<Class<?>> classCandidates = new HashSet<>();
+  if (baseName.equals(qualifiedName)) {
+   if (pckage != null) {
+    //Find based on package and base name
+    try {
+     classCandidates.add(findClass(pckage + "." + baseName));
+    } catch (ClassNotFoundException e) {}
+   }
+   if (imports != null) {
+    //Find based on imports (if not already found in the package scope)
+    imports.stream()
+     .filter(iport -> {
+      final String lastQualifier = iport.substring(iport.lastIndexOf(".") + 1);
+      return lastQualifier.equals(baseName);
+     })
+     .forEach(iport -> {
+      try {
+       classCandidates.add(findClass(iport));
+      } catch (ClassNotFoundException e) {}
+     });
+   }
+   //Find based on default java.lang.* imports
+   try {
+    classCandidates.add(findClass("java.lang." + baseName));
+   } catch (ClassNotFoundException e) {}
+  } else {
+   //Find based on fully qualified name
+   try {
+    classCandidates.add(findClass(qualifiedName));
+   } catch (ClassNotFoundException e) {}
+  }
+  return classCandidates;
+ }
+
  //TODO (once NativeUtils are done) define java.lang.Class impl where ALL forms of instantiation (static included) throw
  //TODO an  UnsupportedOperationException for any injected class, to prevent potential symbol resolution and unsatisfied
  //TODO link errors from arising on the compiler. These classes are only injected into the JVM instance so that they may

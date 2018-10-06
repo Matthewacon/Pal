@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.stream.Stream;
 
 public final class CompilerHooks {
  private static final Field
@@ -73,7 +72,9 @@ public final class CompilerHooks {
 //   System.out.println("Parser Factory: " + parserFactory);
    final Vector<JCTree.JCCompilationUnit> compilationUnits = new Vector<>();
    Files
-    .walk(new File("/home/matthew/Git/pal/src/java/pal/res/class_templates/tests").toPath())
+    //TODO move tests to separate module
+    //TODO test resources are packaged in the test module artifact
+    .walk(new File("/home/matthew/Git/pal/src/java/pal/res/tests").toPath())
     .filter(Files::isRegularFile)
     .forEach(file -> {
      try {
@@ -89,6 +90,7 @@ public final class CompilerHooks {
    compilationUnits.forEach(unit -> {
     System.out.println("Processing compilation unit: " + unit.hashCode());
     final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+    annotations.forEach(ann -> PalMain.ANNOTATION_GENERATOR.generateAnnotation(unit, ann));
     System.out.println("Stripped " + annotations.size() + " annotations\n");
    });
    System.out.println("Annotation stripping took: " + (System.nanoTime()-start) + "ns");
@@ -131,7 +133,6 @@ public final class CompilerHooks {
    }
   }
   //Define all classes
-
   final Class<?>[] compiledClasses = PalMain.PAL_CLASSLOADER.defineClasses(orderedDefinitions);
   //TODO remove debug statement
   if (compiledClasses.length > 0) {

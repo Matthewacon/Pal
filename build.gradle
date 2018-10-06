@@ -14,6 +14,7 @@ plugins {
 
 //Detect OS
 final String OS, JAVA_HOME = System.getProperty("java.home"), JAVA_MAJOR = Jvm.current().javaVersion.majorVersion
+final Double JAVA_MAJOR_D = Double.parseDouble(JAVA_MAJOR)
 switch(OperatingSystem.current().getFamilyName()) {
     case "linux": OS = "linux"; break
     case "windows": OS = "win32"; break
@@ -35,7 +36,7 @@ switch(JAVA_MAJOR) {
 group 'io.github.matthewacon'
 version '0.0.1'
 
-sourceCompatibility = targetCompatibility = 1.8
+sourceCompatibility = targetCompatibility = JAVA_MAJOR_D < 9 ? (1 + JAVA_MAJOR_D/10d) : JAVA_MAJOR_D
 
 repositories {
     jcenter()
@@ -85,7 +86,9 @@ dependencies {
     palCompile 'org.ow2.asm:asm:6.1.1'
     palCompile 'org.ow2.asm:asm-commons:6.1.1'
     palCompile 'org.jetbrains:annotations:16.0.2'
-    palCompile files(Jvm.current().toolsJar)
+    if (JAVA_MAJOR_D < 9) {
+        palCompile files(Jvm.current().toolsJar)
+    }
     pal_annotationsCompile sourceSets.pal.output
     pal_annotation_processorsCompile sourceSets.pal_annotations.output
     exampleCompile sourceSets.pal.output
@@ -209,7 +212,7 @@ static String packageFromFile(String baseDir, String file) {
 }
 
 //TODO Incremental support
-//TODO Make this into a plugin
+//TODO Make this into a plugin with a simple annotation to mark the class for header generation
 task generateJNIHeaders() {
     dependsOn(compilePalJava)
     description = 'Generates the JNI headers for the pal module.'
@@ -295,7 +298,8 @@ task cleanJNIHeaders() {
 
 compilePalJava {
 //    options.compilerArgs += ['-Werror', '-Xlint:none', '-XDenableSunApiLintControl']
-    options.compilerArgs += ['-Werror', '-XDenableSunApiLintControl']
+//    options.compilerArgs += ['-Werror', '-XDenableSunApiLintControl']
+    options.compilerArgs += ['-XDenableSunApiLintControl']
 }
 
 //TODO condition debug through task arguments
@@ -306,6 +310,8 @@ void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
 //    }
     compileTask.inputs
     final Set<File> dependencies = configurations.palRuntime.files
+    //Enforce JDK9
+//    compileTask.options.forkOptions.executable = '/opt/Java/JDK9/bin/javac'
 //    options.compilerArgs += '-proc:none'
     //Append all of the required libraries to the annotation processor classpath
     compileTask.options.annotationProcessorPath = jarTask.outputs.files + layout.files(dependencies)
@@ -421,7 +427,7 @@ jar {
 compileExampleJava {
     dependsOn(jar)
     setCompilerJVMArgs(compileExampleJava, jar)
-    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 task exampleJar(type: Jar, dependsOn: compileExampleJava) {
