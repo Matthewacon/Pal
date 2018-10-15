@@ -1,5 +1,9 @@
 package io.github.matthewacon.pal.util;
 
+import io.github.matthewacon.pal.PalMain;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -11,6 +15,7 @@ public final class ClassUtils {
  //Returns an unordered array of superclasses and superinterfaces
  public static <T> Class<? super T>[] resolveSuperclasses(final Class<T> t) {
   final LinkedHashSet<Class<? super T>> superclasses = new LinkedHashSet<>();
+  superclasses.add(t);
   superclasses.add(t.getSuperclass());
   for (final Class<?> clazz : t.getInterfaces()) {
    superclasses.add((Class<? super T>)clazz);
@@ -73,5 +78,30 @@ public final class ClassUtils {
    }
   }
   return ancestors[0];
+ }
+
+ public static <T> Class<T> getGenericParameter(final Class<?> clazz) {
+  final Type genericSuperclass = clazz.getGenericSuperclass();
+  final Type[] genericInterfaces = clazz.getGenericInterfaces();
+  final Class<T> targetParameter;
+  GenericDiscovery:
+  try {
+   if (ParameterizedType.class.isAssignableFrom(genericSuperclass.getClass())) {
+    final Type typeArgument = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
+    targetParameter = (Class<T>)PalMain.PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
+   } else {
+    for (final Type type : genericInterfaces) {
+     if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
+      final Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
+      targetParameter = (Class<T>)PalMain.PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
+      break GenericDiscovery;
+     }
+    }
+    targetParameter = null;
+   }
+  } catch (ClassNotFoundException e) {
+   throw new RuntimeException(e);
+  }
+  return targetParameter;
  }
 }

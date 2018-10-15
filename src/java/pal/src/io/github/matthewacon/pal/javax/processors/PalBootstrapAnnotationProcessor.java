@@ -17,11 +17,11 @@ import java.util.Set;
 
 /**Bootstrapping processor for the {@link PalProcessor} and {@link PalAnnotation} annotations*/
 public final class PalBootstrapAnnotationProcessor extends AbstractProcessor {
- private final HashSet<String> detectedProcessors;
-
- public PalBootstrapAnnotationProcessor() {
-  this.detectedProcessors = new HashSet<>();
- }
+// private final HashSet<String> detectedProcessors;
+//
+// public PalBootstrapAnnotationProcessor() {
+//  this.detectedProcessors = new HashSet<>();
+// }
 
  @Override
  public void init(final ProcessingEnvironment pe) {

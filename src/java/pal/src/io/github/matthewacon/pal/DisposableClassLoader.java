@@ -1,6 +1,7 @@
 package io.github.matthewacon.pal;
 
 import com.sun.tools.javac.code.Symbol;
+import io.github.matthewacon.pal.util.ExceptionUtils;
 import sun.misc.Launcher;
 
 import java.io.File;

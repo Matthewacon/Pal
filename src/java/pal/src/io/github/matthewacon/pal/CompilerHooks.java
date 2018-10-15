@@ -10,6 +10,8 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import io.github.matthewacon.pal.agent.PalAgent;
 import io.github.matthewacon.pal.util.CompilerUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
+import io.github.matthewacon.pal.util.RuntimeAnnotationGenerator;
 
 import javax.annotation.processing.Processor;
 import javax.tools.FileObject;
@@ -23,6 +25,17 @@ import java.nio.file.Files;
 import java.util.*;
 
 public final class CompilerHooks {
+ public static final class LatentCompilationUnit {
+  public final JCTree.JCCompilationUnit
+   original,
+   modified;
+
+  public LatentCompilationUnit(final JCTree.JCCompilationUnit original, final JCTree.JCCompilationUnit modified) {
+   this.original = original;
+   this.modified = modified;
+  }
+ }
+
  private static final Field
   JavaCompiler_context,
   JavaCompiler_parserFactory;
@@ -87,10 +100,30 @@ public final class CompilerHooks {
     });
    System.out.println("Compilation units to process: " + compilationUnits.size());
    long start = System.nanoTime();
+   final LinkedHashMap<LatentCompilationUnit, LinkedList<JCTree.JCAnnotation>> postProcessing = new LinkedHashMap<>();
    compilationUnits.forEach(unit -> {
     System.out.println("Processing compilation unit: " + unit.hashCode());
     final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
-    annotations.forEach(ann -> PalMain.ANNOTATION_GENERATOR.generateAnnotation(unit, ann));
+    final RuntimeAnnotationGenerator.GeneratorContext gc = new RuntimeAnnotationGenerator.GeneratorContext(unit);
+    annotations.forEach(ann -> {
+     //Remove undefined annotations and retry after annotations have been compiled
+     try {
+      //If the type is resolvable, no exception will be thrown.
+      gc.resolveType(ann);
+     } catch (SymbolNotFoundException e) {
+      //Clone JCCompimatthewlationUnit tree to preserve original state
+      final JCTree.JCCompilationUnit original = (JCTree.JCCompilationUnit)unit.clone();
+      //Remove the annotation from the compilation unit
+      CompilerUtils.traverseTree(unit, CompilerUtils.TreeTraversalFunction.remove(ann));
+      final LatentCompilationUnit latentUnit = new LatentCompilationUnit(original, unit);
+      LinkedList<JCTree.JCAnnotation> toProcess = postProcessing.get(unit);
+      toProcess = toProcess == null ? new LinkedList<>() : toProcess;
+      toProcess.add(ann);
+      postProcessing.put(latentUnit, toProcess);
+     }
+    });
+    //TODO strip pal annotations from compilation unit
+//    annotations.forEach(ann -> PalMain.ANNOTATION_GENERATOR.generateAnnotation(unit, ann));
     System.out.println("Stripped " + annotations.size() + " annotations\n");
    });
    System.out.println("Annotation stripping took: " + (System.nanoTime()-start) + "ns");

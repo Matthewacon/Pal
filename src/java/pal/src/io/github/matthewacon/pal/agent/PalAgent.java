@@ -5,7 +5,7 @@ import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.util.AbstractLog;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
-import io.github.matthewacon.pal.ExceptionUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 
@@ -197,7 +197,7 @@ public final class PalAgent {
       }
      }
     } catch (Throwable t) {
-     ExceptionUtils.initFatal(t);
+     throw new RuntimeException(t);
     }
    } while(parent != null && parent.getParent() != null);
   }

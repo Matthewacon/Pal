@@ -33,6 +33,8 @@ import io.github.matthewacon.pal.*;
 import io.github.matthewacon.pal.api.IPalProcessor;
 import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
 import io.github.matthewacon.pal.util.CompilerUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
+import io.github.matthewacon.pal.util.NativeUtils;
 
 public final class PalAnnotationProcessor extends AbstractProcessor {
  //TODO clean all reflection related code and implement a security manager

@@ -1,7 +1,7 @@
 #include <jvmti.h>
 #include <jni.h>
 
-#include "io_github_matthewacon_pal_NativeUtils.h"
+#include "io_github_matthewacon_pal_util_NativeUtils.h"
 #include "exception_utils.h"
 #include "common.h"
 

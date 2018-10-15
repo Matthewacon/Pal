@@ -2,7 +2,7 @@ package io.github.matthewacon.pal.agent;
 
 import com.sun.tools.javac.util.AbstractLog;
 import com.sun.tools.javac.util.DiagnosticSource;
-import io.github.matthewacon.pal.ExceptionUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
 import net.bytebuddy.asm.Advice;
 
 import java.lang.reflect.Field;

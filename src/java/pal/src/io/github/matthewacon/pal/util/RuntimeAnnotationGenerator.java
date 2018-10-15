@@ -176,8 +176,19 @@ public final class RuntimeAnnotationGenerator {
    } else {
     //Check for 'value' property in annotation
     if (value != null) {
-     //Ensure that the argument type matches the annotation property type
-     if (value.propertyType.equals(context.resolveType(args.get(0)))) {
+     //Check whether or not the property has a default value
+     //If there is a default value then the annotation may contain 0 or 1 argument(s) (default and override,
+     //respectively).
+     //If there is no default value for the 'value' property, then an argument must be provided. In this case the
+     //argument and property types must be equivalent for the code to be valid
+     if (value.defaultValue == null || args.size() > 0) {
+      //Ensure that the argument type matches the annotation property type
+      if (value.propertyType.equals(context.resolveType(args.get(0)))) {
+       return true;
+      }
+     } else {
+      //If no arguments were provided and the annotation contains a default value for the 'value' field, then the
+      //annotation is valid, as the type of the default value will always match the property
       return true;
      }
     }
@@ -196,7 +207,7 @@ public final class RuntimeAnnotationGenerator {
  }
 
  //Utility class for a given compilation unit
- private static final class GeneratorContext {
+ public static final class GeneratorContext {
   private final JCCompilationUnit unit;
 
   public GeneratorContext(final JCCompilationUnit unit) {
@@ -367,7 +378,7 @@ public final class RuntimeAnnotationGenerator {
       if (sArg.indexOf("\"") != sArg.lastIndexOf("\"")) {
        clazz[0] = String.class;
       } else {
-       System.err.println("Unknown type of JCLiteral expression: '" + sArg + "'!");
+       throw new IllegalArgumentException("Unknown type of JCLiteral expression: '" + sArg + "'!");
       }
      }
     ),
@@ -435,6 +446,7 @@ public final class RuntimeAnnotationGenerator {
       }
      } catch (ClassNotFoundException e) {
       //This should never happen, but just in case
+      //TODO appropriate error message
       throw new SymbolNotFoundException("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
      }
     }),

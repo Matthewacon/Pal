@@ -4,8 +4,8 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.main.JavaCompiler;
 import io.github.matthewacon.pal.CompilerHooks;
-import io.github.matthewacon.pal.ExceptionUtils;
-import io.github.matthewacon.pal.NativeUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
+import io.github.matthewacon.pal.util.NativeUtils;
 import net.bytebuddy.asm.Advice;
 
 import java.util.Objects;

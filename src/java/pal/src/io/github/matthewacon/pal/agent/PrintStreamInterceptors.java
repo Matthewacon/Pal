@@ -1,7 +1,7 @@
 package io.github.matthewacon.pal.agent;
 
 import com.sun.tools.javac.jvm.ClassWriter;
-import io.github.matthewacon.pal.NativeUtils;
+import io.github.matthewacon.pal.util.NativeUtils;
 import net.bytebuddy.asm.Advice;
 
 import java.io.PrintStream;

@@ -7,6 +7,9 @@ import io.github.matthewacon.pal.api.PalSourcecodeProcessor;
 import io.github.matthewacon.pal.api.annotations.bytecode.PalProcessor;
 import io.github.matthewacon.pal.javax.processors.PalAnnotationProcessor;
 
+import io.github.matthewacon.pal.util.ClassUtils;
+import io.github.matthewacon.pal.util.ExceptionUtils;
+import io.github.matthewacon.pal.util.NativeUtils;
 import io.github.matthewacon.pal.util.RuntimeAnnotationGenerator;
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
@@ -219,7 +222,7 @@ public final class PalMain {
  public static void registerProcessor(@NotNull final Class<?> clazz) {
   if (clazz.getAnnotation(PalProcessor.class) != null) {
    if (IPalProcessor.class.isAssignableFrom(clazz)) {
-    final Class<? extends Annotation> targetAnnotation = getGenericParameter(clazz);
+    final Class<? extends Annotation> targetAnnotation = ClassUtils.getGenericParameter(clazz);
     if (targetAnnotation == null) {
      throw new IllegalArgumentException(
       "Pal processors must specify which annotation they target as a generic parameter!"
@@ -242,14 +245,14 @@ public final class PalMain {
       final InvalidClassException ice = new InvalidClassException(
        "Pal processors must either define a public default constructor!"
       );
-      throw ExceptionUtils.initFatal(ice);
+      throw new RuntimeException(ice);
      }
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
      final InstantiationException ie = new InstantiationException(
       "Exception thrown while constructing Pal processor '" + clazz.getName() + "'!"
      );
      ie.initCause(e);
-     throw ExceptionUtils.initFatal(ie);
+     throw new RuntimeException(ie);
     }
     REGISTERED_ANNOTATIONS.add(targetAnnotation);
     final NonBlockingHashSet<? super IPalProcessor<?>> processorSet;
@@ -261,41 +264,16 @@ public final class PalMain {
     processorSet.add(processor);
     REGISTERED_PROCESSORS.put(targetAnnotation, processorSet);
    } else {
-    throw ExceptionUtils.initFatal(
+    throw new RuntimeException(
      new InvalidClassException(
       clazz.getName() +
-       " must either implement " +
-       PalBytecodeProcessor.class.getName() +
-       " and/or " +
-       PalSourcecodeProcessor.class.getName()
+      " must either implement " +
+      PalBytecodeProcessor.class.getName() +
+      " and/or " +
+      PalSourcecodeProcessor.class.getName()
      )
     );
    }
   }
- }
-
- private static <T> Class<T> getGenericParameter(final Class<?> clazz) {
-  final Type genericSuperclass = clazz.getGenericSuperclass();
-  final Type[] genericInterfaces = clazz.getGenericInterfaces();
-  final Class<T> targetParameter;
-  GenericDiscovery:
-  try {
-   if (ParameterizedType.class.isAssignableFrom(genericSuperclass.getClass())) {
-    final Type typeArgument = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
-    targetParameter = (Class<T>) PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
-   } else {
-    for (final Type type : genericInterfaces) {
-     if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
-      final Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
-      targetParameter = (Class<T>) PAL_CLASSLOADER.findClass(typeArgument.getTypeName());
-      break GenericDiscovery;
-     }
-    }
-    targetParameter = null;
-   }
-  } catch (ClassNotFoundException e) {
-   throw ExceptionUtils.initFatal(e);
-  }
-  return targetParameter;
  }
 }

@@ -5,6 +5,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.List;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -40,10 +41,6 @@ public final class CompilerUtils {
 
  public static <T> List<T> constructList(final Collection<T> collection) {
   return constructList((T[]) collection.toArray());
- }
-
- public static <T> java.util.List toList(final List<T> list) {
-  return new LinkedList<>(list);
  }
 
  //JCTree utilities
@@ -542,7 +539,77 @@ public final class CompilerUtils {
   };
  }
 
+ public interface TreeTraversalFunction {
+//  <T extends JCTree> T process(
+//   final T tree,
+//   final JCTree elem,
+//   final int layer
+//  );
+  JCTree process(
+   final JCTree tree,
+   final JCTree elem,
+   final int layer
+  );
 
+  static <T extends JCTree> TreeTraversalFunction remove(final T toRemove) {
+   return remove(toRemove.getClass());
+  }
+
+  static <T extends JCTree> TreeTraversalFunction remove(final Class<T> toRemove) {
+   return (tree, elem, layer) -> {
+    if (elem.getClass().equals(toRemove)) {
+     return null;
+    }
+    return elem;
+   };
+  }
+  //TODO include a broader range of tree traversal functions
+ }
+
+ public static <T extends JCTree> void traverseTree(final T tree, final TreeTraversalFunction ttf) {
+  try {
+   LinkedList<JCTree>
+    variables = new LinkedList<>(),
+    lastVariables = new LinkedList<>();
+   variables.add(tree);
+   int layer = -1;
+   while (!variables.equals(lastVariables)) {
+    lastVariables = new LinkedList<>(variables);
+    variables = new LinkedList<>();
+    layer++;
+    for (final JCTree currentUnit : lastVariables) {
+     final Class<? extends JCTree> type = currentUnit.getClass();
+     for (final Field f : type.getFields()) {
+      f.setAccessible(true);
+      final Class<?> fieldType = f.getType();
+      if (ClassUtils.findCommonAncestor(Collection.class, fieldType).equals(Collection.class)) {
+       final Class<? extends JCTree> genericType = ClassUtils.getGenericParameter(fieldType);
+       if (ClassUtils.findCommonAncestor(JCTree.class, genericType).equals(JCTree.class)) {
+        final LinkedList<JCTree>
+         originalElements = new LinkedList<>((List<? extends JCTree>)f.get(currentUnit)),
+         transformedElements = new LinkedList<>();
+        for (final JCTree element : originalElements) {
+         transformedElements.add(ttf.process(tree, element, layer));
+        }
+        f.set(transformedElements, currentUnit);
+       }
+      } else if (ClassUtils.findCommonAncestor(JCTree.class, fieldType).equals(JCTree.class)) {
+       f.set(ttf.process(currentUnit, (JCTree)f.get(currentUnit), layer), currentUnit);
+      } else {
+       throw new IllegalArgumentException(
+        "Unexpected JCTree field type: '" +
+        type.getCanonicalName() +
+        "', in JCTree: '" +
+        type.getCanonicalName() +
+        "'!");
+      }
+     }
+    }
+   }
+  } catch (Throwable t) {
+   throw new RuntimeException(t);
+  }
+ }
 
  public static String getFullyQuantifiedAnnotationName(final JCAnnotation annotation) {
   final StringBuilder sb = new StringBuilder();
