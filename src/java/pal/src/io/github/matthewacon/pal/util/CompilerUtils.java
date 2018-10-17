@@ -6,10 +6,12 @@ import com.sun.tools.javac.util.List;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.github.matthewacon.pal.PalMain;
 import io.github.matthewacon.pal.util.LambdaUtils.*;
 import static io.github.matthewacon.pal.util.LambdaUtils.*;
 
@@ -582,27 +584,37 @@ public final class CompilerUtils {
      for (final Field f : type.getFields()) {
       f.setAccessible(true);
       final Class<?> fieldType = f.getType();
-      if (ClassUtils.findCommonAncestor(Collection.class, fieldType).equals(Collection.class)) {
-       final Class<? extends JCTree> genericType = ClassUtils.getGenericParameter(fieldType);
-       if (ClassUtils.findCommonAncestor(JCTree.class, genericType).equals(JCTree.class)) {
-        final LinkedList<JCTree>
-         originalElements = new LinkedList<>((List<? extends JCTree>)f.get(currentUnit)),
-         transformedElements = new LinkedList<>();
-        for (final JCTree element : originalElements) {
-         transformedElements.add(ttf.process(tree, element, layer));
+      if (Collection.class.equals(ClassUtils.findCommonAncestor(Collection.class, fieldType))) {
+       //TODO Field#getType omits type information (maybe patch that with an interceptor)
+//       final Class<? extends JCTree> genericType = ClassUtils.getGenericParameter(fieldType);
+       final Class<? extends JCTree> genericType = (Class<? extends JCTree>)PalMain
+        .PAL_CLASSLOADER
+        .findClass(((ParameterizedType)f.getGenericType())
+         .getActualTypeArguments()[0]
+         .getTypeName()
+        );
+       if (JCTree.class.equals(ClassUtils.findCommonAncestor(JCTree.class, genericType))) {
+//        variables.addAll((List<? extends JCTree>)f.get(currentUnit));
+         variables.add(ttf.process(tree, currentUnit, layer));
+        //If the original list is an instance of com.sun.tools.javac.util.List, the a corresponding type must be
+        //constructed to match the type
+        if (List.class.equals(ClassUtils.findCommonAncestor(List.class, f.get(currentUnit).getClass()))) {
+         f.set(currentUnit, CompilerUtils.constructList(transformedElements));
+        } else {
+         f.set(currentUnit, transformedElements);
         }
-        f.set(transformedElements, currentUnit);
        }
-      } else if (ClassUtils.findCommonAncestor(JCTree.class, fieldType).equals(JCTree.class)) {
-       f.set(ttf.process(currentUnit, (JCTree)f.get(currentUnit), layer), currentUnit);
-      } else {
-       throw new IllegalArgumentException(
-        "Unexpected JCTree field type: '" +
-        type.getCanonicalName() +
-        "', in JCTree: '" +
-        type.getCanonicalName() +
-        "'!");
+      } else if (JCTree.class.equals(ClassUtils.findCommonAncestor(JCTree.class, fieldType))) {
+       f.set(currentUnit, ttf.process(currentUnit, (JCTree)f.get(currentUnit), layer));
       }
+//      else {
+//       throw new IllegalArgumentException(
+//        "Unexpected field type: '" +
+//        fieldType.getCanonicalName() +
+//        "', in JCTree: '" +
+//        type.getCanonicalName() +
+//        "'!");
+//      }
      }
     }
    }

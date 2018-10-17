@@ -111,7 +111,7 @@ public final class CompilerHooks {
       //If the type is resolvable, no exception will be thrown.
       gc.resolveType(ann);
      } catch (SymbolNotFoundException e) {
-      //Clone JCCompimatthewlationUnit tree to preserve original state
+      //Clone JCCompilationUnit tree to preserve original state
       final JCTree.JCCompilationUnit original = (JCTree.JCCompilationUnit)unit.clone();
       //Remove the annotation from the compilation unit
       CompilerUtils.traverseTree(unit, CompilerUtils.TreeTraversalFunction.remove(ann));

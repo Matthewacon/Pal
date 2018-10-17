@@ -2,8 +2,7 @@ package io.github.matthewacon.pal.util;
 
 import io.github.matthewacon.pal.PalMain;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -80,6 +79,14 @@ public final class ClassUtils {
   return ancestors[0];
  }
 
+ //TODO add notation for accessing type parameter information (compiletime and runtime)
+ //Ex 1) Example.class.$0 for Example<T extends Number> would return a type information object with the bound direction,
+ //      parameter name and bound type
+ //Ex 2) Example<Double> example; example.$0
+ //ALTERNATIVE
+ //Since all bodies with generic parameters must declare a type variable, adapt the notation to match the variable
+ //Ex) Example.class.<T> for Example<T extends Number> would return a type information object with the bound direction,
+ //    parameter name, and bound type: Upper, "T" and Class<Number>, respectively
  public static <T> Class<T> getGenericParameter(final Class<?> clazz) {
   final Type genericSuperclass = clazz.getGenericSuperclass();
   final Type[] genericInterfaces = clazz.getGenericInterfaces();
@@ -103,5 +110,18 @@ public final class ClassUtils {
    throw new RuntimeException(e);
   }
   return targetParameter;
+ }
+
+ //TODO implement stubs
+ public static <T> Class<T> getGenericParameter(final Field field) {
+  return null;
+ }
+
+ public static <T> Class<T> getGenericParameter(final Method method) {
+  return null;
+ }
+
+ public static <T> Class<T> getGenericParameter(final Constructor<T> constructor) {
+  return null;
  }
 }
