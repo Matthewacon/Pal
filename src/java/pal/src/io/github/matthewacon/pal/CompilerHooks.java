@@ -103,7 +103,8 @@ public final class CompilerHooks {
    final LinkedHashMap<LatentCompilationUnit, LinkedList<JCTree.JCAnnotation>> postProcessing = new LinkedHashMap<>();
    compilationUnits.forEach(unit -> {
     System.out.println("Processing compilation unit: " + unit.hashCode());
-    final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+//    final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+    final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.TreeTraversalFunction.aggregate(unit, JCTree.JCAnnotation.class);
     final RuntimeAnnotationGenerator.GeneratorContext gc = new RuntimeAnnotationGenerator.GeneratorContext(unit);
     annotations.forEach(ann -> {
      //Remove undefined annotations and retry after annotations have been compiled
@@ -114,7 +115,7 @@ public final class CompilerHooks {
       //Clone JCCompilationUnit tree to preserve original state
       final JCTree.JCCompilationUnit original = (JCTree.JCCompilationUnit)unit.clone();
       //Remove the annotation from the compilation unit
-      CompilerUtils.traverseTree(unit, CompilerUtils.TreeTraversalFunction.remove(ann));
+      CompilerUtils.traverseTree(unit, CompilerUtils.TreeTraversalFunction.remove(ann.getClass()));
       final LatentCompilationUnit latentUnit = new LatentCompilationUnit(original, unit);
       LinkedList<JCTree.JCAnnotation> toProcess = postProcessing.get(unit);
       toProcess = toProcess == null ? new LinkedList<>() : toProcess;

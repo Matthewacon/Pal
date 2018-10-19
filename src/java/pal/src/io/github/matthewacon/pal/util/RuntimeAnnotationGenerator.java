@@ -519,11 +519,12 @@ public final class RuntimeAnnotationGenerator {
   }
  }
 
- public <T extends Annotation> Vector<T> generateAnnotations(final JCCompilationUnit unit) {
-  final GeneratorContext generatorContext = new GeneratorContext(unit);
-  final Vector<JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
-  return null;
- }
+ //TODO implement
+// public <T extends Annotation> Vector<T> generateAnnotations(final JCCompilationUnit unit) {
+//  final GeneratorContext generatorContext = new GeneratorContext(unit);
+//  final Vector<JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+//  return null;
+// }
 
  /**Literal reference checking:
   * The using class must make reference, in one way or another, to the class literal that it is using. The references

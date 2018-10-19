@@ -79,6 +79,17 @@ public final class ClassUtils {
   return ancestors[0];
  }
 
+ //Returns true if the common ancestor of 'second' is equal to 'first'
+ public static <T> boolean hasCommonAncestor(final Class<T> first, final Class<?> second) {
+  return first.equals(findCommonAncestor(first, second));
+ }
+
+ //TODO this seems fishy, test this
+ //Returns true if the common ancestor of all classes in 'seconds' is equal to 'first'
+ public static <T> boolean hasCommonAncestor(final Class<T> first, final Class<?>... seconds) {
+  return first.equals(findCommonAncestor((Class[])unsafeConcat(new Class[] {first}, seconds)));
+ }
+
  //TODO add notation for accessing type parameter information (compiletime and runtime)
  //Ex 1) Example.class.$0 for Example<T extends Number> would return a type information object with the bound direction,
  //      parameter name and bound type
