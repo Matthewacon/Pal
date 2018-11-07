@@ -2,6 +2,7 @@ package io.github.matthewacon.pal.util;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -75,5 +76,16 @@ public final class ArrayUtils {
    }
   }
   return lhm;
+ }
+
+ //TODO Doc: filters out null elements
+ public static <T, C extends Collection<T>> T[] toArray(final C collection) {
+  return collection
+   .stream()
+   .filter(elem -> elem != null)
+   .collect(Collectors.toList())
+   .toArray(
+    (T[])Array.newInstance(collection.iterator().next().getClass(), 0)
+   );
  }
 }

@@ -43,10 +43,10 @@ public final class RuntimeAnnotationGenerator {
   try {
    JavaCompiler_parserFactory = JavaCompiler.class.getDeclaredField("parserFactory");
    JavaCompiler_parserFactory.setAccessible(true);
-   ANNOTATION_IMPL_STUB = new String(JarUtils.readResource(ANNOTATION_IMPL_URL));
-   ANONYMOUS_ANNOTATION_IMPL_STUB = new String(JarUtils.readResource(ANONYMOUS_ANNOTATION_IMPL_URL));
-   ANNOTATION_METHOD_IMPL_STUB = new String(JarUtils.readResource(ANNOTATION_METHOD_IMPL_URL));
-   IMPORT_IMPL_STUB = new String(JarUtils.readResource(IMPORT_IMPL_URL));
+   ANNOTATION_IMPL_STUB = new String(IOUtils.readResource(ANNOTATION_IMPL_URL));
+   ANONYMOUS_ANNOTATION_IMPL_STUB = new String(IOUtils.readResource(ANONYMOUS_ANNOTATION_IMPL_URL));
+   ANNOTATION_METHOD_IMPL_STUB = new String(IOUtils.readResource(ANNOTATION_METHOD_IMPL_URL));
+   IMPORT_IMPL_STUB = new String(IOUtils.readResource(IMPORT_IMPL_URL));
   } catch (Throwable t) {
    throw new RuntimeException(t);
   }
@@ -162,7 +162,7 @@ public final class RuntimeAnnotationGenerator {
 //       ccase(JCNewClass.class, unnamedArgumentCase(matchWrapper)),
 //       ccase(JCAnnotation.class, unnamedArgumentCase(matchWrapper)),
        //TODO if the annotation values contain a named argument, the code is invalid (maybe throw an exception)
-       ccase(null, cdefault -> matchWrapper.wrap(false))
+       ccase(null, cDefault -> matchWrapper.wrap(false))
       );
       //Break out of loop on first confirmed negative match
       if (!matchWrapper.unwrap()) {
@@ -315,7 +315,7 @@ public final class RuntimeAnnotationGenerator {
     ccase(JCLiteral.class, jcLiteral -> sb.append(jcLiteral.toString())),
     //Default case
     ccase(null,
-     cdefault -> {
+     cDefault -> {
      throw new IllegalArgumentException("Invalid annotation parameter: '" + arg + "', type: '" + arg.getClass() + "'!");
 //      System.err.println("Invalid annotation parameter: '" + arg + "', type: '" + arg.getClass() + "'!");
      }
@@ -459,7 +459,7 @@ public final class RuntimeAnnotationGenerator {
     ),
     ccase(
      null,
-     cdefault -> {
+     cDefault -> {
       throw new IllegalArgumentException("Unexpected JCExpression: '" + expr + "', type: '" + expr.getClass() + "'");
      }
     )

@@ -152,7 +152,7 @@ public final class CompilerUtils {
    ),
    ccase(
     null,
-    cdefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cdefault.getClass() + "'!");}
+    cDefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cDefault.getClass() + "'!");}
    )
   );
   return sb.toString();
@@ -171,7 +171,7 @@ public final class CompilerUtils {
    ),
    ccase(
     null,
-    cdefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cdefault.getClass() + "'!");}
+    cDefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cDefault.getClass() + "'!");}
    )
   );
   return sb.toString();

@@ -103,7 +103,13 @@ public final class CompilerHooks {
    final LinkedHashMap<LatentCompilationUnit, LinkedList<JCTree.JCAnnotation>> postProcessing = new LinkedHashMap<>();
    compilationUnits.forEach(unit -> {
     System.out.println("Processing compilation unit: " + unit.hashCode());
-//    final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.processAnnotations(unit);
+//    try {
+//     System.out.println(PalMain.PAL_CLASSLOADER.findClass(
+//      "java.util.Map<java.util.List<java.lang.String>, java.util.Map<java.util.Map<java.lang.String, java.lang.Integer>, java.lang.Double>>"
+//     ));
+//    } catch (Throwable t) {
+//     System.out.println();
+//    }
     final Vector<JCTree.JCAnnotation> annotations = CompilerUtils.TreeTraversalFunction.aggregate(unit, JCTree.JCAnnotation.class);
     final RuntimeAnnotationGenerator.GeneratorContext gc = new RuntimeAnnotationGenerator.GeneratorContext(unit);
     annotations.forEach(ann -> {

@@ -3,48 +3,81 @@ package io.github.matthewacon.pal.util;
 import io.github.matthewacon.pal.PalMain;
 
 import java.lang.reflect.*;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.github.matthewacon.pal.util.ArrayUtils.*;
 
 public final class ClassUtils {
  //Returns an unordered array of superclasses and superinterfaces
- public static <T> Class<? super T>[] resolveSuperclasses(final Class<T> t) {
-  final LinkedHashSet<Class<? super T>> superclasses = new LinkedHashSet<>();
-  superclasses.add(t);
-  superclasses.add(t.getSuperclass());
+ public static <T> Class<? super T>[] resolveSupers(final Class<T> t) {
+  final LinkedHashSet<Class<? super T>> superClasses = new LinkedHashSet<>();
+  superClasses.add(t);
+  superClasses.add(t.getSuperclass());
   for (final Class<?> clazz : t.getInterfaces()) {
-   superclasses.add((Class<? super T>)clazz);
+   superClasses.add((Class<? super T>)clazz);
   }
   LinkedHashSet<Class<? super T>> lastSuperclasses = new LinkedHashSet<>();
-  while (!lastSuperclasses.equals(superclasses)) {
-   lastSuperclasses.addAll(superclasses);
+  while (!lastSuperclasses.equals(superClasses)) {
+   lastSuperclasses.addAll(superClasses);
    for (Class<? super T> clazz : lastSuperclasses) {
     if (clazz != null) {
-     superclasses.add(clazz.getSuperclass());
+     superClasses.add(clazz.getSuperclass());
      for (final Class<? super T> iface : (Class<? super T>[])clazz.getInterfaces()) {
-      superclasses.add(iface);
+      superClasses.add(iface);
      }
     }
    }
   }
-  return (Class<? super T>[])superclasses
-   .stream()
-   .filter(elem -> elem != null)
-   .collect(Collectors.toList())
-   .toArray(new Class[0]);
+  return ArrayUtils.toArray(superClasses);
+//  return (Class<? super T>[])superClasses
+//   .stream()
+//   .filter(elem -> elem != null)
+//   .collect(Collectors.toList())
+//   .toArray(new Class[0]);
  }
+
+ public static <T> Class<? super T>[] resolveSuperClasses(final Class<T> t) {
+  final LinkedHashSet<Class<? super T>> superClasses = new LinkedHashSet<>();
+  Class<? super T> superClass = t;
+  while ((superClass = superClass.getSuperclass()) != null) {
+   superClasses.add(superClass);
+  }
+  return ArrayUtils.toArray(superClasses);
+ }
+
+ //TODO
+// public static <T> LinkedTreeMap<Class<? super T>> resolveSuperInterfaces(final Class<T> t) {
+//  LinkedTreeMap<Class<? super T>> root = new LinkedTreeMap<>(t);
+//  Iterator<LinkedTreeMap<Class<? super T>>> iterator = root.getChildren().iterator();
+//  while (true) {
+//   final LinkedTreeMap<Class<? super T>> rootRef = root;
+//   final List<Class<? super T>> interfaces = Arrays.asList((Class<? super T>[])root.getValue().getInterfaces());
+//   root.addChildren(interfaces
+//    .stream()
+//    .map(iface -> new LinkedTreeMap<>(rootRef, iface))
+//    .collect(Collectors.toList())
+//   );
+//   if (iterator.hasNext()) {
+//    root = iterator.next();
+//   } else {
+//    root = root.getParent();
+//   }
+//   //Break before the last upward traversal
+//   if (root.getValue().equals(t)) {
+//    break;
+//   }
+//  }
+//  return root;
+// }
 
  //Returns either a common ancestor of both classes or null if none exists
  public static <T> Class<? super T> findCommonAncestor(final Class<T> first, final Class<?> second) {
   if (first.equals(second)) {
    return first;
   } else {
-   final Class<? super T>[] firstSuperclasses = resolveSuperclasses(first);
-   final Class<?>[] secondSuperclasses = resolveSuperclasses(second);
+   final Class<? super T>[] firstSuperclasses = resolveSupers(first);
+   final Class<?>[] secondSuperclasses = resolveSupers(second);
    final LinkedHashMap<Integer, Integer> commonElements = findCommonElements(firstSuperclasses, secondSuperclasses);
    if (commonElements.size() != 0) {
     final int
@@ -91,6 +124,7 @@ public final class ClassUtils {
  }
 
  //TODO add notation for accessing type parameter information (compiletime and runtime)
+ //TODO clean up
  //Ex 1) Example.class.$0 for Example<T extends Number> would return a type information object with the bound direction,
  //      parameter name and bound type
  //Ex 2) Example<Double> example; example.$0
@@ -118,7 +152,8 @@ public final class ClassUtils {
     targetParameter = null;
    }
   } catch (ClassNotFoundException e) {
-   throw new RuntimeException(e);
+//   throw new RuntimeException(e);
+   return null;
   }
   return targetParameter;
  }
@@ -135,4 +170,51 @@ public final class ClassUtils {
  public static <T> Class<T> getGenericParameter(final Constructor<T> constructor) {
   return null;
  }
+
+// public static LinkedTreeMap<String> lexGenericParameters(final String name) {
+//  if (name.contains("<")) {
+//   final String expr = name.replaceAll("\\s+", "");
+//   int
+//    index = 0,
+//    lastMatch = -1;
+//   char lastIdentifier = '\0';
+//   LinkedTreeMap<String> root = null;
+//   while (index < expr.length()) {
+//    final char c = expr.charAt(index);
+//    final String sub = expr.substring(lastMatch + 1, index);
+//    if (c == '<') {
+//     lastMatch = index;
+//     final LinkedTreeMap<String> newParent = new LinkedTreeMap<>(root, sub);
+//     if (root != null) {
+//      root
+//       .getChildren()
+//       .add(newParent);
+//     }
+//     root = newParent;
+//     lastIdentifier = c;
+//    } else if (c == '>') {
+//     lastMatch = index;
+//     if (lastIdentifier != '>') {
+//      root
+//       .getChildren()
+//       .add(new LinkedTreeMap<>(root, sub));
+//     }
+//     root = root.getParent() == null ? root : root.getParent();
+//     lastIdentifier = c;
+//    } else if (c == ',') {
+//     lastMatch = index;
+//     if (lastIdentifier != '>') {
+//      root
+//       .getChildren()
+//       .add(new LinkedTreeMap<>(root, sub));
+//     }
+//     lastIdentifier = c;
+//    }
+//    index++;
+//   }
+//   return root;
+//  } else {
+//   return null;
+//  }
+// }
 }

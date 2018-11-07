@@ -360,7 +360,7 @@ task libOnlyJar(type: Jar, dependsOn: compilePalJava) {
 compilePal_annotationsJava {
     dependsOn(compilePalJava, libOnlyJar)
     setCompilerJVMArgs(compilePal_annotationsJava, libOnlyJar)
-    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+//    options.forkOptions.jvmArgs += "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 }
 
 //Required to build Pal annotation processors

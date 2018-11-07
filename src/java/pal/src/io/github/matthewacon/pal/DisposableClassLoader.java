@@ -1,7 +1,9 @@
 package io.github.matthewacon.pal;
 
 import com.sun.tools.javac.code.Symbol;
+import io.github.matthewacon.pal.util.ClassUtils;
 import io.github.matthewacon.pal.util.ExceptionUtils;
+import io.github.matthewacon.pal.util.LinkedTreeMap;
 import sun.misc.Launcher;
 
 import java.io.File;
@@ -73,20 +75,68 @@ public final class DisposableClassLoader extends ClassLoader {
  public native Class<?> redefineClass(final byte[] bytes) throws ClassNotFoundException, ClassFormatError;
 
  //TODO DOC - Searches system classpath, bootstrap classpath and compiled classes
+ //TODO Deal with embedded generic classes
  public Class<?> findClass(final String name) throws ClassNotFoundException {
   Class<?> clazz;
   try {
    clazz = super.findClass(name);
   } catch (ClassNotFoundException e) {
    try {
+    //Search bootstrap classpath first
     if ((clazz = (Class<?>)ClassLoaderNativeAccessor.findBootstrapClassOrNull.invoke(this, name)) == null) {
+     //If not found in bootstrap classpath, search injected classes
      for (final Class<?> injected : injectedClasses) {
       if (injected.getName().equals(name)) {
        clazz = injected;
        break;
       }
      }
+     //Cut out any generic parameters and try to resolve the base classes (re-inject generic parameters after the fact)
+     //TODO Once the LinkedTreeMap utilities are finished, convert over to use ClassUtils#lexGenericParameters and
+     //TODO transform the resulting tree into classes. (isolation of utilities)
+     if (name.contains("<")) {
+      final String expr = name.replaceAll("\\s+", "");
+      int
+       index = 0,
+       lastMatch = -1;
+      char lastIdentifier = '\0';
+      LinkedTreeMap<Class<?>> root = null;
+      while (index < expr.length()) {
+       final char c = expr.charAt(index);
+       final String sub = expr.substring(lastMatch + 1, index);
+       if (c == '<') {
+        lastMatch = index;
+        final LinkedTreeMap<Class<?>> newParent = new LinkedTreeMap<>(root, findClass(sub));
+        if (root != null) {
+         root.addChild(newParent);
+        }
+        root = newParent;
+        lastIdentifier = c;
+       } else if (c == '>') {
+        lastMatch = index;
+        if (lastIdentifier != '>') {
+         root.addChild(
+          new LinkedTreeMap<>(root, findClass(sub))
+         );
+        }
+        root = root.getParent() == null ? root : root.getParent();
+        lastIdentifier = c;
+       } else if (c == ',') {
+        lastMatch = index;
+        if (lastIdentifier != '>') {
+         root.addChild(
+          new LinkedTreeMap<>(root, findClass(sub))
+         );
+        }
+        lastIdentifier = c;
+       }
+       index++;
+      }
+      final Class<?> testClazz = ClassUtils.getGenericParameter(root.getClass());
+      System.out.println();
+     }
     }
+    //Finally, if none of the searches have yielded any result, throw the original exception
     if (clazz == null) {
      throw e;
     }
