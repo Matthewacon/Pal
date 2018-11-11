@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 //TODO standardize to be compatible with jdk (see TreeMap)
-public final class LinkedTreeMap<T> {
+public class LinkedTreeMap<T> {
  public interface TreeTraversalFunction<E, T extends LinkedTreeMap<E>> {
   T process(final T root, final T elem);
 

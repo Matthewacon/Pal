@@ -47,15 +47,15 @@ public final class ClassUtils {
  }
 
  //TODO
-// public static <T> LinkedTreeMap<Class<? super T>> resolveSuperInterfaces(final Class<T> t) {
-//  LinkedTreeMap<Class<? super T>> root = new LinkedTreeMap<>(t);
-//  Iterator<LinkedTreeMap<Class<? super T>>> iterator = root.getChildren().iterator();
+// public static <T> ExampleLinkedTreeMap<Class<? super T>> resolveSuperInterfaces(final Class<T> t) {
+//  ExampleLinkedTreeMap<Class<? super T>> root = new ExampleLinkedTreeMap<>(t);
+//  Iterator<ExampleLinkedTreeMap<Class<? super T>>> iterator = root.getChildren().iterator();
 //  while (true) {
-//   final LinkedTreeMap<Class<? super T>> rootRef = root;
+//   final ExampleLinkedTreeMap<Class<? super T>> rootRef = root;
 //   final List<Class<? super T>> interfaces = Arrays.asList((Class<? super T>[])root.getValue().getInterfaces());
 //   root.addChildren(interfaces
 //    .stream()
-//    .map(iface -> new LinkedTreeMap<>(rootRef, iface))
+//    .map(iface -> new ExampleLinkedTreeMap<>(rootRef, iface))
 //    .collect(Collectors.toList())
 //   );
 //   if (iterator.hasNext()) {
@@ -171,20 +171,20 @@ public final class ClassUtils {
   return null;
  }
 
-// public static LinkedTreeMap<String> lexGenericParameters(final String name) {
+// public static ExampleLinkedTreeMap<String> lexGenericParameters(final String name) {
 //  if (name.contains("<")) {
 //   final String expr = name.replaceAll("\\s+", "");
 //   int
 //    index = 0,
 //    lastMatch = -1;
 //   char lastIdentifier = '\0';
-//   LinkedTreeMap<String> root = null;
+//   ExampleLinkedTreeMap<String> root = null;
 //   while (index < expr.length()) {
 //    final char c = expr.charAt(index);
 //    final String sub = expr.substring(lastMatch + 1, index);
 //    if (c == '<') {
 //     lastMatch = index;
-//     final LinkedTreeMap<String> newParent = new LinkedTreeMap<>(root, sub);
+//     final ExampleLinkedTreeMap<String> newParent = new ExampleLinkedTreeMap<>(root, sub);
 //     if (root != null) {
 //      root
 //       .getChildren()
@@ -197,7 +197,7 @@ public final class ClassUtils {
 //     if (lastIdentifier != '>') {
 //      root
 //       .getChildren()
-//       .add(new LinkedTreeMap<>(root, sub));
+//       .add(new ExampleLinkedTreeMap<>(root, sub));
 //     }
 //     root = root.getParent() == null ? root : root.getParent();
 //     lastIdentifier = c;
@@ -206,7 +206,7 @@ public final class ClassUtils {
 //     if (lastIdentifier != '>') {
 //      root
 //       .getChildren()
-//       .add(new LinkedTreeMap<>(root, sub));
+//       .add(new ExampleLinkedTreeMap<>(root, sub));
 //     }
 //     lastIdentifier = c;
 //    }

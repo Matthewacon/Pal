@@ -92,7 +92,7 @@ public final class DisposableClassLoader extends ClassLoader {
       }
      }
      //Cut out any generic parameters and try to resolve the base classes (re-inject generic parameters after the fact)
-     //TODO Once the LinkedTreeMap utilities are finished, convert over to use ClassUtils#lexGenericParameters and
+     //TODO Once the ExampleLinkedTreeMap utilities are finished, convert over to use ClassUtils#lexGenericParameters and
      //TODO transform the resulting tree into classes. (isolation of utilities)
      if (name.contains("<")) {
       final String expr = name.replaceAll("\\s+", "");
