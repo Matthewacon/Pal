@@ -44,7 +44,7 @@ public final class CompilerUtils {
  }
 
  //TODO include a broader range of tree traversal functions
- public interface TreeTraversalFunction {
+ public interface CompilerTreeTraversalFunction {
   //TODO generic lambda methods
 //  <T extends JCTree> T process(
 //   final T tree,
@@ -58,7 +58,7 @@ public final class CompilerUtils {
    final int layer
   );
 
-  static <T extends JCTree> TreeTraversalFunction remove(final Class<T> toRemove) {
+  static <T extends JCTree> CompilerTreeTraversalFunction remove(final Class<T> toRemove) {
    return (tree, elem, layer) -> toRemove.isInstance(elem) ? null : elem;
   }
 
@@ -79,7 +79,7 @@ public final class CompilerUtils {
 
  //TODO break apart into modifyTree and traverseTree (performance improvement for lambdas that do not modify the tree)
  //TODO further generalize modifyTree to accept a modification function
- public static <T extends JCTree> void traverseTree(final T tree, final TreeTraversalFunction ttf) {
+ public static <T extends JCTree> void traverseTree(final T tree, final CompilerTreeTraversalFunction ttf) {
   try {
    final LinkedList<JCTree> toProcess = new LinkedList<>();
    toProcess.add(tree);

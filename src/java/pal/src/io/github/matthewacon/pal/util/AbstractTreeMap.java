@@ -20,22 +20,22 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
 
   default TreeTraversalFunction<M, C> remove(final M toRemove) {
    return (parent, elem) -> {
-    if (toRemove == null) {
-     return elem == null ? null : elem;
+    if (elem == null) {
+     return null;
     } else {
      return elem.equals(toRemove) ? null : elem;
     }
    };
   }
 
-  //Reflects the tree about the center of the vertical cross-section of the map
-  TreeTraversalFunction<M, C> reflect();
-
-  //Reflects the tree about the center of the horizontal cross-section of the map
-  TreeTraversalFunction<M, C> invert();
-
-  //Flattens the map down to 2 layers: the root and other nodes in the tree as root's children
-  TreeTraversalFunction<M, C> flatten();
+//  //Reflects the tree about the center of the vertical cross-section of the map
+//  TreeTraversalFunction<M, C> reflect();
+//
+//  //Reflects the tree about the center of the horizontal cross-section of the map
+//  TreeTraversalFunction<M, C> invert();
+//
+//  //Flattens the map down to 2 layers: the root and other nodes in the tree as root's children
+//  TreeTraversalFunction<M, C> flatten();
 
   //TODO Generic parameters (and parameter sets) as first-order citizens
   /*Would simplify this entire data structure to something like the following
@@ -65,73 +65,50 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
 
   //Level order traversal methods (LTR only -- combine with 'TreeTraversalMethod::reflect' to iterate from RTL)
   static <M extends AbstractTreeMap<M, C>, C extends Collection<M>> TreeTraversalMethod<M, C> topDown() {
-   return new TreeTraversalMethod<M, C>() {
-    //TODO severed branches must also have their parent references removed
-    @Override
-    public M traverse(M root, TreeTraversalFunction<M, C>... ttfs) {
-     LinkedList<M>
-      currentIteration = new LinkedList<>(),
-      lastIteration;
-     currentIteration.add(root);
-     while (currentIteration.size() > 0) {
-      lastIteration = new LinkedList<>(currentIteration);
-      currentIteration.clear();
-      C
-       parentChildrenRef = null,
-       lastParent = null;
-      for (M branch : lastIteration) {
-       final M parent = branch.getParent();
-       final boolean hasParent = parent != null;
-       final C branchChildren = branch.getChildren();
-       if (hasParent) {
-        lastParent = parentChildrenRef;
-        parentChildrenRef = parent.getChildren();
-        if (!parentChildrenRef.equals(lastParent)) {
-         parentChildrenRef.clear();
-        }
-       }
-       for (final TreeTraversalFunction<M, C> ttf : ttfs) {
-        if (branch != null) {
-         branch = ttf.process(parent, branch);
-        } else {
-         break;
-        }
-       }
-       if (branch == null) {
-        if (!hasParent) {
-         //If the root element was removed from the tree then there is no more tree
-         return null;
-        }
-       } else {
-        if (hasParent) {
-         parentChildrenRef.add(branch);
-        }
-        currentIteration.addAll(branchChildren);
+   //TODO severed branches must also have their parent references removed
+   return (M root, final TreeTraversalFunction<M, C>... ttfs) -> {
+    LinkedList<M>
+     currentIteration = new LinkedList<>(),
+     lastIteration;
+    currentIteration.add(root);
+    while (currentIteration.size() > 0) {
+     lastIteration = new LinkedList<>(currentIteration);
+     currentIteration.clear();
+     C
+      parentChildrenRef = null,
+      lastParent = null;
+     for (M branch : lastIteration) {
+      final M parent = branch.getParent();
+      final boolean hasParent = parent != null;
+      final C branchChildren = branch.getChildren();
+      if (hasParent) {
+       lastParent = parentChildrenRef;
+       parentChildrenRef = parent.getChildren();
+       if (!parentChildrenRef.equals(lastParent)) {
+        parentChildrenRef.clear();
        }
       }
+      for (final TreeTraversalFunction<M, C> ttf : ttfs) {
+       if (branch != null) {
+        branch = ttf.process(parent, branch);
+       } else {
+        break;
+       }
+      }
+      if (branch == null) {
+       if (!hasParent) {
+        //If the root element was removed from the tree then there is no more tree
+        return null;
+       }
+      } else {
+       if (hasParent) {
+        parentChildrenRef.add(branch);
+       }
+       currentIteration.addAll(branchChildren);
+      }
      }
-     return root;
     }
-
-    @Override
-    public TreeTraversalFunction<M, C> reflect() {
-     return (parent, elem) -> {
-      final LinkedList<M> children = new LinkedList<>(parent.getChildren());
-      return children.get(children.size() - children.indexOf(elem) - 1);
-     };
-    }
-
-    @Override
-    public TreeTraversalFunction<M, C> invert() {
-     //TODO implement
-     return null;
-    }
-
-    @Override
-    public TreeTraversalFunction<M, C> flatten() {
-     //TODO implement
-     return null;
-    }
+    return root;
    };
   }
 
@@ -140,16 +117,6 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
    return null;
   }
  }
-
-// private final M parent;
-//
-// public AbstractTreeMap() {
-//  this(null);
-// }
-//
-// public AbstractTreeMap(final M parent) {
-//  this.parent = parent;
-// }
 
  public abstract M getParent();
 

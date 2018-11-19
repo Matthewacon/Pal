@@ -337,6 +337,7 @@ void setCompilerJVMArgs(final JavaCompile compileTask, final Jar jarTask) {
 
 static void configureManifest(final Manifest manifest) {
     manifest.attributes(
+            'Created-By' : 'Matthewacon (Matthew Barichello)',
             'Premain-Class' : 'io.github.matthewacon.pal.agent.PalAgent',
             'Can-Redefine-Classes': 'true',
             'Can-Retransform-Classes': 'true',
