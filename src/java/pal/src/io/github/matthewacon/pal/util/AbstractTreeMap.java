@@ -8,14 +8,14 @@ import java.util.stream.Collectors;
 
 //TODO implement default Iterator methods
 //TODO Should all trees be immutable?
-public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends Collection<M>> implements Cloneable {
+public interface AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends Collection<M>> extends Cloneable {
 //implements Cloneable, Iterable<AbstractTreeMap<T, C, M>> {
- public interface TreeTraversalFunction<M extends AbstractTreeMap<M, C>, C extends Collection<M>> {
+ interface TreeTraversalFunction<M extends AbstractTreeMap<M, C>, C extends Collection<M>> {
   M process(final M parent, final M elem);
  }
 
  //E n u m s d o n ' t s u p p o r t g e n e r i c p a r a m e t e r s s o h e r e ' s a n i n t e r f a c e
- public interface TreeTraversalMethod<M extends AbstractTreeMap<M, C>, C extends Collection<M>> {
+ interface TreeTraversalMethod<M extends AbstractTreeMap<M, C>, C extends Collection<M>> {
   M traverse(final M root, final TreeTraversalFunction<M, C>... ttf);
 
   default TreeTraversalFunction<M, C> remove(final M toRemove) {
@@ -118,41 +118,44 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
   }
  }
 
- public abstract M getParent();
+ M getParent();
 
- public abstract void setParent(final M parent);
+ void setParent(final M parent);
 
- public abstract C getChildren();
+ C getChildren();
 
  //TODO should the default implementations be final?
- public boolean addChild(final M child) {
+ default boolean addChild(final M child) {
   child.setParent((M)this);
   return getChildren().add(child);
  }
 
- public boolean addChildren(final C children) {
+ default boolean addChildren(final C children) {
   children.forEach(child -> child.setParent((M)AbstractTreeMap.this));
   return getChildren().addAll(children);
  }
 
- public boolean removeChild(final M child) {
+ default boolean removeChild(final M child) {
   child.setParent(null);
   return getChildren().remove(child);
  }
 
- public boolean removeChildren(final C children) {
+ default boolean removeChildren(final C children) {
   children.forEach(child -> child.setParent(null));
   return getChildren().removeAll(children);
  }
 
+// default Object clone() {
+//  return shallowClone();
+// }
+
  //TODO Doc: shallow clones the subclass instance, disregarding any tree information
- @Override
- public abstract M clone();
+ M shallowClone();
 
  @Override
  public abstract boolean equals(final Object obj);
 
- public final M traverseTree(final TreeTraversalMethod<M, C> ttm, final Supplier<TreeTraversalFunction<M, C>>... ttf) {
+ default M traverseTree(final TreeTraversalMethod<M, C> ttm, final Supplier<TreeTraversalFunction<M, C>>... ttf) {
   return traverseTree(
    ttm,
    (TreeTraversalFunction<M, C>[])Arrays
@@ -163,7 +166,7 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
   );
  }
 
- public final M traverseTree(final TreeTraversalMethod<M, C> ttm, final TreeTraversalFunction<M, C>... ttf) {
+ default M traverseTree(final TreeTraversalMethod<M, C> ttm, final TreeTraversalFunction<M, C>... ttf) {
   if (ttf.length > 0) {
    return ttm.traverse((M)this, ttf);
   }
@@ -172,7 +175,7 @@ public abstract class AbstractTreeMap<M extends AbstractTreeMap<M, C>, C extends
 
  //Default tree traversal method -> topDown
  //TODO should this be included?
- public final M traverseTree(final TreeTraversalFunction<M, C>... ttf) {
+ default M traverseTree(final TreeTraversalFunction<M, C>... ttf) {
   if (ttf.length > 0) {
    return TreeTraversalMethod.<M, C>topDown().traverse((M)this, ttf);
   }

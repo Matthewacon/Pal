@@ -432,6 +432,7 @@ public final class RuntimeAnnotationGenerator {
      //If all classes match, simply take the class candidate at index 0
      try {
       if (candidates[0].isArray()) {
+       //TODO switch over to {@link ClassUtils#countDims(Class)}
        final Pattern pattern = Pattern.compile("\\[\\]");
        final Matcher matcher = pattern.matcher(candidates[0].getCanonicalName());
        String dims = "[";

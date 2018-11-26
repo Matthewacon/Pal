@@ -2,7 +2,7 @@ package io.github.matthewacon.pal.util;
 
 import java.util.LinkedList;
 
-public abstract class ExampleLinkedTreeMap<T extends ExampleLinkedTreeMap<T>> extends AbstractTreeMap<T, LinkedList<T>> {
+public abstract class ExampleLinkedTreeMap<T extends ExampleLinkedTreeMap<T>> implements AbstractTreeMap<T, LinkedList<T>> {
  private T parent;
  private final LinkedList<T> children;
 

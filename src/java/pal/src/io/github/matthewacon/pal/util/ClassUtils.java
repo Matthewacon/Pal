@@ -4,7 +4,8 @@ import io.github.matthewacon.pal.PalMain;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.github.matthewacon.pal.util.ArrayUtils.*;
 
@@ -169,6 +170,14 @@ public final class ClassUtils {
 
  public static <T> Class<T> getGenericParameter(final Constructor<T> constructor) {
   return null;
+ }
+
+ private static final Pattern ARRAY_PATTERN = Pattern.compile("\\[\\]");
+ public static <T> int countDims(final Class<T> clazz) {
+  final Matcher matcher = ARRAY_PATTERN.matcher(clazz.getCanonicalName());
+  int dims = 0;
+  while (matcher.find()) dims += 1;
+  return dims;
  }
 
 // public static ExampleLinkedTreeMap<String> lexGenericParameters(final String name) {

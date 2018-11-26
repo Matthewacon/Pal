@@ -174,7 +174,7 @@ public final class NativeUtils {
     break;
    }
   }
-  return frame-1;
+  return frame - 1;
  }
 
  public static <T> T getInstanceFromStack(final Class<T> clazz) throws Exception {
