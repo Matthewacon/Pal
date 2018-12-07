@@ -141,16 +141,16 @@ public final class CompilerUtils {
 
  public static String getFullyQuantifiedAnnotationName(final JCAnnotation annotation) {
   final StringBuilder sb = new StringBuilder();
-  cswitch(annotation.annotationType,
-   ccase(
+  vswitch(annotation.annotationType,
+   vcase(
     JCIdent.class,
     ident -> sb.append(ident.name.toString())
    ),
-   ccase(
+   vcase(
     JCFieldAccess.class,
     field -> sb.append(field.toString())
    ),
-   ccase(
+   vcase(
     null,
     cDefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cDefault.getClass() + "'!");}
    )
@@ -160,16 +160,16 @@ public final class CompilerUtils {
 
  public static String getBaseName(final JCAnnotation annotation) {
   final StringBuilder sb = new StringBuilder();
-  cswitch(annotation.annotationType,
-   ccase(
+  vswitch(annotation.annotationType,
+   vcase(
     JCIdent.class,
     ident -> sb.append(ident.name.toString())
    ),
-   ccase(
+   vcase(
     JCFieldAccess.class,
     field -> sb.append(field.name.toString())
    ),
-   ccase(
+   vcase(
     null,
     cDefault -> {throw new IllegalArgumentException("Invalid annotation name type: '" + cDefault.getClass() + "'!");}
    )

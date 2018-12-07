@@ -147,8 +147,8 @@ public final class RuntimeAnnotationGenerator {
     if ((properties.length - nonDefault.size()) <= args.size()) {
      final Wrapper<Boolean> matchWrapper = new Wrapper<>(true, true);
      for (final JCExpression arg : args) {
-      cswitch(arg,
-       ccase(JCAssign.class,
+      vswitch(arg,
+       vcase(JCAssign.class,
         jcAssign -> {
          if (!selfRef.containsProperty(jcAssign.lhs.toString())) {
           if (!selfRef.containsProperty(context.resolveType(jcAssign.rhs))) {
@@ -157,12 +157,12 @@ public final class RuntimeAnnotationGenerator {
          }
         }
        ),
-//       ccase(JCLiteral.class, unnamedArgumentCase(matchWrapper)),
-//       ccase(JCNewArray.class, unnamedArgumentCase(matchWrapper)),
-//       ccase(JCNewClass.class, unnamedArgumentCase(matchWrapper)),
-//       ccase(JCAnnotation.class, unnamedArgumentCase(matchWrapper)),
+//       vcase(JCLiteral.class, unnamedArgumentCase(matchWrapper)),
+//       vcase(JCNewArray.class, unnamedArgumentCase(matchWrapper)),
+//       vcase(JCNewClass.class, unnamedArgumentCase(matchWrapper)),
+//       vcase(JCAnnotation.class, unnamedArgumentCase(matchWrapper)),
        //TODO if the annotation values contain a named argument, the code is invalid (maybe throw an exception)
-       ccase(null, cDefault -> matchWrapper.wrap(false))
+       vcase(null, cDefault -> matchWrapper.wrap(false))
       );
       //Break out of loop on first confirmed negative match
       if (!matchWrapper.unwrap()) {
@@ -225,9 +225,9 @@ public final class RuntimeAnnotationGenerator {
 
   public <E extends JCExpression> String expressionToString(final E arg, final E... lastArg) {
    final StringBuilder sb = new StringBuilder();
-   cswitch(arg,
+   vswitch(arg,
    //JCAnnotation case
-   ccase(
+   vcase(
     JCAnnotation.class,
     jcAnnotation -> {
      //lastArg[0] should always be the root annotation
@@ -256,7 +256,7 @@ public final class RuntimeAnnotationGenerator {
     }
    ),
     //JCAssign case
-    ccase(JCAssign.class,
+    vcase(JCAssign.class,
      jcAssign -> {
       sb.append(ANNOTATION_METHOD_IMPL_STUB
        .replace("$TYPE", resolveType(jcAssign).getCanonicalName())
@@ -266,7 +266,7 @@ public final class RuntimeAnnotationGenerator {
      }
     ),
     //JCNewArray case
-    ccase(JCNewArray.class,
+    vcase(JCNewArray.class,
      jcNewArray -> {
       final StringBuffer localBuffer = new StringBuffer();
       Class<?> type = resolveType(jcNewArray);
@@ -294,17 +294,17 @@ public final class RuntimeAnnotationGenerator {
      }
     ),
     //JCNewClass case
-    ccase(JCNewClass.class,
+    vcase(JCNewClass.class,
      //TODO consider the default argument case
      jcNewClass -> sb.append(jcNewClass.toString())
     ),
     //JCIdent case
     //TODO consider the default argument case
-    ccase(JCIdent.class, jcIdent -> sb.append(jcIdent.name)),
+    vcase(JCIdent.class, jcIdent -> sb.append(jcIdent.name)),
     //JCFieldAccess case
-//   ccase(JCFieldAccess.class, jcFieldAccess -> sb.append(jcFieldAccess.toString())),
+//   vcase(JCFieldAccess.class, jcFieldAccess -> sb.append(jcFieldAccess.toString())),
     //TODO consider the default argument case
-    ccase(
+    vcase(
      JCFieldAccess.class,
      jcFieldAccess -> {
       final Class<?> type = resolveType(jcFieldAccess.selected);
@@ -312,9 +312,9 @@ public final class RuntimeAnnotationGenerator {
      }),
     //JCLiteral case
     //TODO consider the default argument case
-    ccase(JCLiteral.class, jcLiteral -> sb.append(jcLiteral.toString())),
+    vcase(JCLiteral.class, jcLiteral -> sb.append(jcLiteral.toString())),
     //Default case
-    ccase(null,
+    vcase(null,
      cDefault -> {
      throw new IllegalArgumentException("Invalid annotation parameter: '" + arg + "', type: '" + arg.getClass() + "'!");
 //      System.err.println("Invalid annotation parameter: '" + arg + "', type: '" + arg.getClass() + "'!");
@@ -368,10 +368,10 @@ public final class RuntimeAnnotationGenerator {
    final Class<?>[] clazz = new Class<?>[] {null};
    final String pckage = unit.pid != null ? unit.pid.toString() : null;
    final List<String> imports = generateImports();
-   cswitch(expr,
-    ccase(JCAssign.class, jcAssign -> clazz[0] = resolveType(jcAssign.rhs)),
+   vswitch(expr,
+    vcase(JCAssign.class, jcAssign -> clazz[0] = resolveType(jcAssign.rhs)),
     //TODO write test cases for JCLiteral
-    ccase(
+    vcase(
      JCLiteral.class,
      jcLiteal -> {
       final String sArg = jcLiteal.toString();
@@ -382,7 +382,7 @@ public final class RuntimeAnnotationGenerator {
       }
      }
     ),
-    ccase(
+    vcase(
      JCFieldAccess.class,
      jcFieldAccess -> {
       final String name = jcFieldAccess.selected.toString();
@@ -403,12 +403,12 @@ public final class RuntimeAnnotationGenerator {
 //      }
      }
     ),
-    ccase(JCNewClass.class, jcNewClass -> {
+    vcase(JCNewClass.class, jcNewClass -> {
      final String name = jcNewClass.clazz.toString();
      clazz[0] = narrowCandidates(name, name, null, imports, jcNewClass);
     }),
-    ccase(JCAnnotation.class, jcAnnotation -> clazz[0] = getParentAnnotation(jcAnnotation).annotationType),
-    ccase(JCNewArray.class, jcNewArray -> {
+    vcase(JCAnnotation.class, jcAnnotation -> clazz[0] = getParentAnnotation(jcAnnotation).annotationType),
+    vcase(JCNewArray.class, jcNewArray -> {
      final Class<?>[] candidates = new Class<?>[jcNewArray.elems.size()];
      for (int i = 0; i < jcNewArray.elems.size(); i++) {
       final JCExpression xpr = jcNewArray.elems.get(i);
@@ -451,14 +451,14 @@ public final class RuntimeAnnotationGenerator {
       throw new SymbolNotFoundException("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
      }
     }),
-    ccase(
+    vcase(
      JCIdent.class,
      jcIdent -> {
       final String name = jcIdent.toString();
       clazz[0] = narrowCandidates(name, name, pckage, imports, jcIdent);
      }
     ),
-    ccase(
+    vcase(
      null,
      cDefault -> {
       throw new IllegalArgumentException("Unexpected JCExpression: '" + expr + "', type: '" + expr.getClass() + "'");
